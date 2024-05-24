@@ -12,7 +12,7 @@ import {
 } from "../controller/productController.js";
 
 // import middleware
-import { requiredSignIn, isAdmin } from "../middlewares/auth.js";
+import { requiredSignIn, isAdmin } from "../middlewares/authMiddleware.js";
 
 router.post("/products", requiredSignIn, isAdmin, formidable(), createProduct);
 router.get("/products", listProduct);

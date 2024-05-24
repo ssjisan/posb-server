@@ -9,21 +9,21 @@ export const createProduct = async (req, res) => {
     const { image } = req.files;
     switch (true) {
       case !name.trim():
-        res.json({ error: "Name is required" });
+        return res.json({ error: "Name is required" });
       case !description.trim():
-        res.json({ error: "Description is required" });
+        return res.json({ error: "Description is required" });
       case !price.trim():
-        res.json({ error: "Price is required" });
+        return res.json({ error: "Price is required" });
       case !category.trim():
-        res.json({ error: "Category is required" });
+        return res.json({ error: "Category is required" });
       case !quantity.trim():
-        res.json({ error: "Quantity is required" });
+        return res.json({ error: "Quantity is required" });
       case !sold.trim():
-        res.json({ error: "Sold is required" });
+        return res.json({ error: "Sold is required" });
       case !shipping.trim():
-        res.json({ error: "Shipping is required" });
+        return res.json({ error: "Shipping is required" });
       case image && image.size > 1000000:
-        res.json({ error: "Image size should not be more than 1MB" });
+        return res.json({ error: "Image size should not be more than 1MB" });
     }
     const product = new Products({ ...req.fields, slug: slugify(name) });
     if (image) {

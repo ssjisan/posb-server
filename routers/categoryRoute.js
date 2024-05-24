@@ -10,7 +10,7 @@ import {
 } from "../controller/categoryController.js";
 
 // import middleware
-import { requiredSignIn, isAdmin } from "../middlewares/auth.js";
+import { requiredSignIn, isAdmin } from "../middlewares/authMiddleware.js";
 
 router.post("/category", requiredSignIn, isAdmin, createCategory);
 router.put("/category/:categoryId", requiredSignIn, isAdmin, updateCategory);

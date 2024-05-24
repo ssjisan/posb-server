@@ -10,7 +10,7 @@ export const requiredSignIn = (req, res, next) => {
     req.user = decoded;
     next();
   } catch (err) {
-    return res.status(401).json(err.message)
+    res.status(401).json("Unauthorized: " + err.message);
   }
 };
 
