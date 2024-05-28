@@ -125,3 +125,11 @@ export const readEvent = async (req, res) => {
     console.log(err);
   }
 };
+export const removeEvent = async (req, res) => {
+  try {
+    const event = await Events.findByIdAndDelete(req.params.eventId);
+    res.json(event);
+  } catch (err) {
+    console.log(err);
+  }
+};
