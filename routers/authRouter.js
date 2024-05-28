@@ -6,7 +6,6 @@ import {
   registerUser,
   loginUser,
   privateRoute,
-  updateUser,
   removeUser,
   userList,
 } from "../controller/authController.js";
@@ -14,7 +13,7 @@ import {
 // import middleware
 import { requiredSignIn, isAdmin } from "../middlewares/authMiddleware.js";
 
-router.post("/register", requiredSignIn, isAdmin, registerUser);
+router.post("/register", registerUser);
 router.post("/login", loginUser);
 router.get("/users", requiredSignIn, isAdmin, userList);
 router.delete("/user/:userId", requiredSignIn, isAdmin, removeUser);

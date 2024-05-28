@@ -2,10 +2,9 @@ import express from "express";
 import dotenv from "dotenv";
 import mongoose from "mongoose";
 import authRouters from "./routers/authRouter.js";
-import categoryRouters from "./routers/categoryRoute.js";
-import productsRouters from "./routers/productsRoute.js";
+import eventRoute from "./routers/eventRoute.js";
 import morgan from "morgan";
-import cors from "cors"
+import cors from "cors";
 
 dotenv.config();
 
@@ -24,6 +23,7 @@ app.use(express.json());
 
 // router middelware //
 app.use(authRouters);
+app.use(eventRoute);
 // app.use(categoryRouters);
 // app.use(productsRouters);
 
