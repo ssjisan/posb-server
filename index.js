@@ -30,7 +30,7 @@ app.use(albumRoute);
 const port = process.env.PORT || 8001;
 
 app.get("/",(req,res)=>{
-  res.send("Hi!!!")
+  res.send("Hi!!! Your are getting data")
 })
 
 app.listen(port, () => {
