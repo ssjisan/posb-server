@@ -26,7 +26,6 @@ app.use(express.json());
 app.use(authRouters);
 app.use(eventRoute);
 app.use(albumRoute);
-// app.use(productsRouters);
 
 const port = process.env.PORT || 8001;
 
