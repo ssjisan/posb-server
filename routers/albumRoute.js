@@ -20,11 +20,12 @@ router.post(
   "/album",
   requiredSignIn,
   isAdmin,
-  upload.array("images", 10),
+  upload.array("images", 50),
   createAlbum
 );
 router.get("/album/:slug", readAlbum);
 router.get("/albums", listAlbums);
+router.delete("/album/:albumId", requiredSignIn, isAdmin, removeAlbum);
 // router.put(
 //   "/event/:eventId",
 //   requiredSignIn,
@@ -32,6 +33,5 @@ router.get("/albums", listAlbums);
 //   formidable(),
 //   updateEvent
 // );
-// router.delete("/album/:albumId", requiredSignIn, isAdmin, removeAlbum);
 
 export default router;
