@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import mongoose from "mongoose";
 import authRouters from "./routers/authRouter.js";
 import eventRoute from "./routers/eventRoute.js";
+import albumRoute from "./routers/albumRoute.js";
 import morgan from "morgan";
 import cors from "cors";
 
@@ -24,7 +25,7 @@ app.use(express.json());
 // router middelware //
 app.use(authRouters);
 app.use(eventRoute);
-// app.use(categoryRouters);
+app.use(albumRoute);
 // app.use(productsRouters);
 
 const port = process.env.PORT || 8001;
