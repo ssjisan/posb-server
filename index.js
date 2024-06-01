@@ -1,9 +1,10 @@
 import express from "express";
 import dotenv from "dotenv";
 import mongoose from "mongoose";
-import authRouters from "./routers/authRouter.js";
-import eventRoute from "./routers/eventRoute.js";
-import albumRoute from "./routers/albumRoute.js";
+import authRoutes from "./routers/authRoutes.js";
+import eventRoutes from "./routers/eventRoutes.js";
+import albumRoutes from "./routers/albumRoutes.js";
+import noticeRoutes from "./routers/noticeRoutes.js";
 import morgan from "morgan";
 import cors from "cors";
 
@@ -23,9 +24,10 @@ app.use(morgan("dev"));
 app.use(express.json());
 
 // router middelware //
-app.use(authRouters);
-app.use(eventRoute);
-app.use(albumRoute);
+app.use(authRoutes);
+app.use(eventRoutes);
+app.use(albumRoutes);
+app.use(noticeRoutes);
 
 const port = process.env.PORT || 8001;
 
