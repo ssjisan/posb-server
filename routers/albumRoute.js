@@ -1,5 +1,5 @@
 import express from "express";
-import {upload} from "../middlewares/albumMiddleware.js"
+
 
 const router = express.Router();
 // import controller
@@ -13,11 +13,11 @@ import {
 // import middleware
 import { requiredSignIn, isAdmin } from "../middlewares/authMiddleware.js";
 
+
 router.post(
   "/album",
   requiredSignIn,
   isAdmin,
-  upload.array("images", 50),
   createAlbum
 );
 router.get("/album/:slug", readAlbum);

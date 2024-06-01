@@ -6,6 +6,7 @@ import eventRoute from "./routers/eventRoute.js";
 import albumRoute from "./routers/albumRoute.js";
 import morgan from "morgan";
 import cors from "cors";
+import multer from "multer";
 
 dotenv.config();
 
@@ -22,6 +23,10 @@ app.use(cors());
 app.use(morgan("dev"));
 app.use(express.json());
 
+// Configure Multer
+const upload = multer({ dest: "uploads/" });
+app.use(upload.array("images", 50)); // Apply Multer as middleware globally
+
 // router middelware //
 app.use(authRouters);
 app.use(eventRoute);
@@ -29,9 +34,9 @@ app.use(albumRoute);
 
 const port = process.env.PORT || 8001;
 
-app.get("/",(req,res)=>{
-  res.send("Hi!!! Your are getting data")
-})
+app.get("/", (req, res) => {
+  res.send("Hi!!! Your are getting data");
+});
 
 app.listen(port, () => {
   console.log(`This is running ${port}`);

@@ -16,7 +16,6 @@ export const createAlbum = async (req, res) => {
   try {
     const { albumName } = req.body;
     const files = req.files;
-
     if (!albumName) {
       return res.status(400).json({ error: "Album name is required" });
     }
