@@ -6,7 +6,6 @@ import eventRoute from "./routers/eventRoute.js";
 import albumRoute from "./routers/albumRoute.js";
 import morgan from "morgan";
 import cors from "cors";
-import multer from "multer";
 
 dotenv.config();
 
@@ -22,10 +21,6 @@ mongoose
 app.use(cors());
 app.use(morgan("dev"));
 app.use(express.json());
-
-// Configure Multer
-const upload = multer({ dest: "uploads/" });
-app.use(upload.array("images", 50)); // Apply Multer as middleware globally
 
 // router middelware //
 app.use(authRouters);
