@@ -1,6 +1,5 @@
 import express from "express";
-import formidable from "express-formidable";
-import multer from "multer";
+import {upload} from "../middlewares/albumMiddleware.js"
 
 const router = express.Router();
 // import controller
@@ -13,8 +12,6 @@ import {
 
 // import middleware
 import { requiredSignIn, isAdmin } from "../middlewares/authMiddleware.js";
-
-const upload = multer({ dest: "uploads/" });
 
 router.post(
   "/album",
