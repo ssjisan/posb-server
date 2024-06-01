@@ -27,8 +27,12 @@ export const createAlbum = async (req, res) => {
 
     for (const file of files) {
       const formData = new FormData();
-      formData.append("image", file.buffer, file.originalname);
+      formData.append("image", file.buffer, {
+        filename: file.originalname,
+        contentType: file.mimetype,
+      });
       formData.append("key", IMGBB_API_KEY);
+
 
       const response = await fetch("https://api.imgbb.com/1/upload", {
         method: "POST",
