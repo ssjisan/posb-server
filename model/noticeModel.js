@@ -14,6 +14,11 @@ const noticeSchema = Schema(
       required: true,
       trim: true,
     },
+    link: {
+      type: String,
+      required: true,
+      trim: true,
+    },
     author: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

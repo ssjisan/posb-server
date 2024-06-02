@@ -2,16 +2,22 @@ import Notice from "../model/noticeModel.js";
 
 export const createNotice = async (req, res) => {
   try {
-    const { title, description } = req.body;
+    const { title, description, link } = req.body;
     const userId = req.user._id; // Assuming req.user contains the logged-in user's data
 
-    if (!title) {
-      return res.status(400).json({ error: "Title is required" });
+    switch (true) {
+      case !title.trim():
+        return res.json({ error: "Title is required" });
+      case !description.trim():
+        return res.json({ error: "Description is required" });
+      case !link.trim():
+        return res.json({ error: "Link is required" });
     }
 
     const newNotice = new Notice({
       title,
       description,
+      link,
       author: userId,
     });
 
@@ -29,6 +35,22 @@ export const listOfNotice = async (req, res) => {
     res.json(notices);
   } catch (error) {
     console.error("Error fetching notices:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const readNotice = async (req, res) => {
+  try {
+    const { noticeId } = req.params;
+    const notice = await Notice.findById(noticeId).populate("author", "name email");
+    
+    if (!notice) {
+      return res.status(404).json({ error: "Notice not found" });
+    }
+
+    res.json(notice);
+  } catch (error) {
+    console.error("Error fetching notice:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
