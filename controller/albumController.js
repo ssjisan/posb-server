@@ -1,6 +1,6 @@
 import slugify from "slugify";
 import Albums from "../model/albumModel.js";
-import cloudinary from "cloudinary";
+import {v2 as cloudinary} from 'cloudinary';
 
 const CLOUD_NAME = process.env.CLOUD_NAME;
 const API_KEY = process.env.API_KEY;
