@@ -17,7 +17,7 @@ cloudinary.config({
 
 const uploadImageToCloudinary = async (imageBuffer) => {
   return new Promise((resolve, reject) => {
-    const stream = cloudinary.v2.uploader.upload_stream((error, result) => {
+    const stream = cloudinary.uploader.upload_stream((error, result) => {
       if (error) {
         reject(error);
       } else {
