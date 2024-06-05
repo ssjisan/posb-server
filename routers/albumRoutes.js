@@ -1,20 +1,17 @@
 import express from "express";
-
-
-const router = express.Router();
-// import controller
 import {
   createAlbum,
+  listOfAllAlbums,
+  deleteAlbum,
+  updateAlbum,
   readAlbum,
-  listAlbums,
-  removeAlbum
 } from "../controller/albumController.js";
-
-// import middleware
-import { requiredSignIn, isAdmin } from "../middlewares/authMiddleware.js";
 import multer from "multer";
 
-// Setup multer to use memory storage
+const router = express.Router();
+import { requiredSignIn, isAdmin } from "../middlewares/authMiddleware.js";
+
+// Multer configuration
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
@@ -25,15 +22,15 @@ router.post(
   upload.array("images", 50),
   createAlbum
 );
+router.get("/albums", listOfAllAlbums);
 router.get("/album/:slug", readAlbum);
-router.get("/albums", listAlbums);
-router.delete("/album/:albumId", requiredSignIn, isAdmin, removeAlbum);
-// router.put(
-//   "/event/:eventId",
-//   requiredSignIn,
-//   isAdmin,
-//   formidable(),
-//   updateEvent
-// );
+router.delete("/albums/:albumId", requiredSignIn, isAdmin, deleteAlbum);
+router.put(
+  "/album/:albumId",
+  upload.array("newImages", 50),
+  requiredSignIn,
+  isAdmin,
+  updateAlbum
+);
 
 export default router;

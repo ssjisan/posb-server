@@ -1,97 +1,171 @@
-import { dirname } from "path";
-import { fileURLToPath } from "url";
 import slugify from "slugify";
-import Album from "../model/albumModel.js";
-import fetch from "node-fetch";
-import FormData from "form-data";
+import Albums from "../model/albumModel.js";
+import cloudinary from "cloudinary";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const CLOUD_NAME = process.env.CLOUD_NAME;
+const API_KEY = process.env.API_KEY;
+const API_SECRET = process.env.API_SECRET;
 
-const IMGBB_API_KEY = process.env.IMGBB_API_KEY;
+cloudinary.config({
+  cloud_name: CLOUD_NAME,
+  api_key: API_KEY,
+  api_secret: API_SECRET,
+});
+
+const uploadImageToCloudinary = async (imageBuffer) => {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.v2.uploader.upload_stream((error, result) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve({
+          url: result.secure_url,
+          public_id: result.public_id,
+        });
+      }
+    });
+    stream.end(imageBuffer);
+  });
+};
 
 export const createAlbum = async (req, res) => {
   try {
-    const { albumName } = req.body;
-    const files = req.files;
-
-    if (!albumName) {
-      return res.status(400).json({ error: "Album name is required" });
-    }
-
-    if (!files || files.length === 0) {
-      return res.status(400).json({ error: "At least one image is required" });
-    }
-
+    const { name } = req.body;
+    const images = req.files;
     const uploadedImages = [];
 
-    for (const file of files) {
-      const formData = new FormData();
-      formData.append("image", file.buffer, {
-        filename: file.originalname,
-        contentType: file.mimetype,
-      });
-      formData.append("key", IMGBB_API_KEY);
-
-
-      const response = await fetch("https://api.imgbb.com/1/upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      const data = await response.json();
-      if (!data.success) {
-        throw new Error("Image upload failed");
-      }
-
-      uploadedImages.push(data.data.url);
+    // Upload each image to Cloudinary and store the result in uploadedImages
+    for (const image of images) {
+      const uploadResult = await uploadImageToCloudinary(image.buffer);
+      uploadedImages.push(uploadResult);
     }
 
-    const newAlbum = new Album({
-      name: albumName,
-      slug: slugify(albumName, { lower: true, strict: true }),
+    // Create a new album document
+    const album = new Albums({
+      name,
+      slug: slugify(name, { lower: true }),
       images: uploadedImages,
     });
 
-    await newAlbum.save();
-    res.json(newAlbum);
-  } catch (error) {
-    console.error("Error creating album:", error);
-    res.status(500).json({ error: "Internal server error" });
+    // Save the album to the database
+    await album.save();
+
+    // Send the created album as a response
+    res.status(201).json(album);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: err.message });
   }
 };
 
-export const listAlbums = async (req, res) => {
+export const listOfAllAlbums = async (req, res) => {
   try {
-    const albums = await Album.find();
-    res.json(albums);
-  } catch (error) {
+    // Fetch all albums from the database
+    const albums = await Albums.find();
+
+    // Return the list of albums as a JSON response
+    res.status(200).json(albums);
+  } catch (err) {
     console.error("Error fetching albums:", error);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ message: "Internal server error" });
   }
 };
 
 export const readAlbum = async (req, res) => {
   try {
     const { slug } = req.params;
-    const album = await Album.findOne({ slug });
+    const album = await Albums.findOne({ slug });
 
     if (!album) {
       return res.status(404).json({ error: "Album not found" });
     }
-
     res.json(album);
   } catch (error) {
     console.error("Error fetching album:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
-
-export const removeAlbum = async (req, res) => {
+export const deleteAlbum = async (req, res) => {
   try {
-    const album = await Album.findByIdAndDelete(req.params.albumId);
-    res.json(album);
+    const { albumId } = req.params;
+
+    // Find the album by id
+    const album = await Albums.findById(albumId);
+    if (!album) {
+      return res.status(404).json({ message: "Album not found" });
+    }
+
+    // Delete images from Cloudinary
+    for (const image of album.images) {
+      try {
+        await cloudinary.v2.uploader.destroy(image.public_id);
+      } catch (error) {
+        console.error(`Error deleting image from Cloudinary: ${error.message}`);
+      }
+    }
+
+    // Delete album from database
+    await Albums.findByIdAndDelete(albumId);
+
+    res
+      .status(200)
+      .json({ message: "Album and its images deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const updateAlbum = async (req, res) => {
+  try {
+    const { name } = req.body;
+    const removeImageIds = req.body.removeImageIds ? JSON.parse(req.body.removeImageIds) : []; // Parse JSON string
+    const newImages = req.files;
+    const albumId = req.params.albumId;
+
+    // Find the album by id
+    const album = await Albums.findById(albumId);
+    if (!album) {
+      return res.status(404).json({ message: "Album not found" });
+    }
+
+    // Update album name if provided
+    if (name) {
+      album.name = name;
+      album.slug = slugify(name, { lower: true });
+    }
+
+    // Remove selected images from Cloudinary and album
+    if (removeImageIds && removeImageIds.length > 0) {
+      for (const public_id of removeImageIds) {
+        // Remove image from Cloudinary
+        await cloudinary.v2.uploader.destroy(public_id);
+        // Remove image from album
+        album.images = album.images.filter(image => image.public_id !== public_id);
+      }
+    }
+
+
+   // Upload new images to Cloudinary and add to album
+   if (newImages && newImages.length > 0) {
+    for (const image of newImages) {
+      const uploadResult = await uploadImageToCloudinary(image.buffer);
+      if (!uploadResult) {
+        throw new Error("Failed to upload image to Cloudinary");
+      }
+      album.images.push({
+        url: uploadResult.url,
+        public_id: uploadResult.public_id,
+      });
+    }
+  }
+  
+    // Save the updated album
+    await album.save();
+
+    // Send the updated album as a response
+    res.status(200).json(album);
   } catch (err) {
-    console.log(err.message);
+    console.error(err);
+    res.status(500).json({ message: err.message });
   }
 };
