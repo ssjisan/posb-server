@@ -101,7 +101,7 @@ export const deleteAlbum = async (req, res) => {
     // Delete images from Cloudinary
     for (const image of album.images) {
       try {
-        await cloudinary.v2.uploader.destroy(image.public_id);
+        await cloudinary.uploader.destroy(image.public_id);
       } catch (error) {
         console.error(`Error deleting image from Cloudinary: ${error.message}`);
       }
@@ -141,7 +141,7 @@ export const updateAlbum = async (req, res) => {
     if (removeImageIds && removeImageIds.length > 0) {
       for (const public_id of removeImageIds) {
         // Remove image from Cloudinary
-        await cloudinary.v2.uploader.destroy(public_id);
+        await cloudinary.uploader.destroy(public_id);
         // Remove image from album
         album.images = album.images.filter(image => image.public_id !== public_id);
       }

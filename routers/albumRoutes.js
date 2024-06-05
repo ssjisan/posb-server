@@ -24,7 +24,7 @@ router.post(
 );
 router.get("/albums", listOfAllAlbums);
 router.get("/album/:slug", readAlbum);
-router.delete("/albums/:albumId", requiredSignIn, isAdmin, deleteAlbum);
+router.delete("/album/:albumId", requiredSignIn, isAdmin, deleteAlbum);
 router.put(
   "/album/:albumId",
   upload.array("newImages", 50),
