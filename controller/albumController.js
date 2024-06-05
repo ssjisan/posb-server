@@ -2,13 +2,12 @@ import slugify from "slugify";
 import Albums from "../model/albumModel.js";
 import {v2 as cloudinary} from 'cloudinary';
 
-const CLOUD_NAME = process.env.CLOUD_NAME;
-const API_KEY = process.env.API_KEY;
+
 const API_SECRET = process.env.API_SECRET;
 
 cloudinary.config({
-  cloud_name: CLOUD_NAME,
-  api_key: API_KEY,
+  cloud_name: "dy9sjb09r",
+  api_key: "587555721873693",
   api_secret: API_SECRET,
 });
 
