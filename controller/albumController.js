@@ -1,12 +1,16 @@
 import slugify from "slugify";
 import Albums from "../model/albumModel.js";
-const cloudinary = require('cloudinary').v2; // Ensure .v2 is used
+import {v2 as cloudinary} from 'cloudinary';
+dotenv.config();
 
+const CLOUD_NAME = process.env.CLOUD_NAME;
+const API_KEY = process.env.API_KEY;
+const API_SECRET = process.env.API_SECRET;
 
 cloudinary.config({
-  cloud_name: "dy9sjb09r",
-  api_key: "587555721873693",
-  api_secret: "qVCshsakF4005VaFOqVWwJjf3lc",
+  cloud_name: CLOUD_NAME,
+  api_key: API_KEY,
+  api_secret: API_SECRET,
 });
 
 const uploadImageToCloudinary = async (imageBuffer) => {
