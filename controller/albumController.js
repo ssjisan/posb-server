@@ -1,6 +1,8 @@
 import slugify from "slugify";
 import Albums from "../model/albumModel.js";
 import {v2 as cloudinary} from 'cloudinary';
+import dotenv from "dotenv";
+
 dotenv.config();
 
 const CLOUD_NAME = process.env.CLOUD_NAME;
