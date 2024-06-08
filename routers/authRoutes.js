@@ -15,7 +15,7 @@ import { requiredSignIn, isAdmin } from "../middlewares/authMiddleware.js";
 
 router.post("/register", registerUser);
 router.post("/login", loginUser);
-router.get("/users", requiredSignIn, isAdmin, userList);
+router.get("/users", requiredSignIn, userList);
 router.delete("/user/:userId", requiredSignIn, isAdmin, removeUser);
 router.get("/private", requiredSignIn, isAdmin, privateRoute);
 router.get("/auth-check", requiredSignIn, (req, res) => {

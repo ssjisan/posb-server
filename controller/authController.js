@@ -8,7 +8,7 @@ dotenv.config();
 export const registerUser = async (req, res) => {
   try {
     // 1. destruct the element
-    const { name, email, password } = req.body;
+    const { name, email, password, role } = req.body;
     // 2. Add Validation
     if (!name.trim()) {
       return res.json({ error: "Name is required" });
@@ -18,6 +18,9 @@ export const registerUser = async (req, res) => {
     }
     if (!password || password.length < 6) {
       return res.json({ error: "Password should be longer than 6 charecter" });
+    }
+    if (role === undefined) {
+      return res.json({ error: "Role is required" });
     }
     // 3. Check the email is taken or not
     const existingUser = await UserModel.findOne({ email });
@@ -31,6 +34,7 @@ export const registerUser = async (req, res) => {
       name,
       email,
       password: hashedPassword,
+      role
     }).save();
     // 6. Use JWT for auth
     const token = jwt.sign({ _id: newUser._id }, process.env.JWT_SECURE, {
@@ -106,7 +110,7 @@ export const removeUser = async (req, res) => {
     const user = await UserModel.findByIdAndDelete(req.params.userId);
     res.json(user);
   } catch (err) {
-    return res.status(400).json(err);
+    return res.status(400).json({ error: "Access Denied!" });
   }
 };
 export const privateRoute = async (req, res) => {
