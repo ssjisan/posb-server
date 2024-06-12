@@ -10,12 +10,12 @@ import {
 } from "../controller/noticeController.js";
 
 // import middleware
-import { requiredSignIn, isAdmin } from "../middlewares/authMiddleware.js";
+import { requiredSignIn } from "../middlewares/authMiddleware.js";
 
-router.post("/notice", requiredSignIn, isAdmin, createNotice);
+router.post("/notice", requiredSignIn, createNotice);
 router.get("/notices", listOfNotice);
 router.get("/notice/:noticeId", readNotice);
-router.delete("/notice/:noticeId", requiredSignIn, isAdmin, removeNotice);
-router.put("/notice/:noticeId", requiredSignIn, isAdmin, updateNotice);
+router.delete("/notice/:noticeId", requiredSignIn, removeNotice);
+router.put("/notice/:noticeId", requiredSignIn,updateNotice);
 
 export default router;

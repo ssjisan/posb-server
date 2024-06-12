@@ -1,5 +1,5 @@
 import express from "express";
-import { createMember,listAllMembers } from "../controller/memberController.js";
+import { createMember,listAllMembers,deleteMember } from "../controller/memberController.js";
 import multer from "multer";
 
 const router = express.Router();
@@ -16,5 +16,6 @@ router.post(
   createMember
 );
 router.get("/members",requiredSignIn, listAllMembers);
+router.delete('/member/:memberId',requiredSignIn, deleteMember);
 
 export default router;

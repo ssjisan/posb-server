@@ -12,19 +12,18 @@ import {
 } from "../controller/eventController.js";
 
 // import middleware
-import { requiredSignIn, isAdmin } from "../middlewares/authMiddleware.js";
+import { requiredSignIn } from "../middlewares/authMiddleware.js";
 
-router.post("/event", requiredSignIn, isAdmin, formidable(), createEvent);
+router.post("/event", requiredSignIn, formidable(), createEvent);
 router.put(
   "/event/:eventId",
   requiredSignIn,
-  isAdmin,
   formidable(),
   updateEvent
 );
 router.get("/events", listEvents);
 router.get("/event/image/:eventId", imageOfEvent);
 router.get("/event/:slug", readEvent);
-router.delete("/event/:eventId", requiredSignIn, isAdmin, removeEvent);
+router.delete("/event/:eventId", requiredSignIn, removeEvent);
 
 export default router;

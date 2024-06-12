@@ -34,14 +34,14 @@ export const createMember = async (req, res) => {
   try {
     const { name, designation, workPlace, email, phone, mailingAddress } =
       req.body;
-      const profilePhoto = req.file;
-  
-      // Upload the profile photo to Cloudinary
-      let uploadedImage = null;
-      if (profilePhoto) {
-        uploadedImage = await uploadImageToCloudinary(profilePhoto.buffer);
-      }
-    
+    const profilePhoto = req.file;
+
+    // Upload the profile photo to Cloudinary
+    let uploadedImage = null;
+    if (profilePhoto) {
+      uploadedImage = await uploadImageToCloudinary(profilePhoto.buffer);
+    }
+
     // Validate required fields
     switch (true) {
       case !name.trim():
@@ -84,6 +84,30 @@ export const listAllMembers = async (req, res) => {
   try {
     const members = await Members.find();
     res.status(200).json(members);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+export const deleteMember = async (req, res) => {
+  try {
+    const { memberId } = req.params;
+    const member = await Members.findByIdAndDelete(memberId);
+
+    if (!member) {
+      return res.status(404).json({ message: "Member not found" });
+    }
+
+    // Delete profile photo from Cloudinary
+    if (member.profilePhoto && member.profilePhoto.length > 0) {
+      try {
+        const publicId = member.profilePhoto[0].public_id;
+        await cloudinary.uploader.destroy(publicId);
+      } catch (error) {
+        res.json({ message: error.message });
+      }
+    }
+    res.status(200).json({ message: "Member deleted successfully" });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
