@@ -88,6 +88,7 @@ export const readAlbum = async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 };
+
 export const deleteAlbum = async (req, res) => {
   try {
     const { albumId } = req.params;

@@ -1,5 +1,11 @@
 import express from "express";
-import { createMember,listAllMembers,deleteMember } from "../controller/memberController.js";
+import {
+  createMember,
+  listAllMembers,
+  deleteMember,
+  readMember,
+  updateMember,
+} from "../controller/memberController.js";
 import multer from "multer";
 
 const router = express.Router();
@@ -15,7 +21,9 @@ router.post(
   upload.single("profilePhoto"), // change to single image upload
   createMember
 );
-router.get("/members",requiredSignIn, listAllMembers);
-router.delete('/member/:memberId',requiredSignIn, deleteMember);
+router.get("/members", requiredSignIn, listAllMembers);
+router.delete("/member/:memberId", requiredSignIn, deleteMember);
+router.get("/member/:id", requiredSignIn, readMember);
+router.put("/member/:id", requiredSignIn, upload.single("profilePhoto"),updateMember);
 
 export default router;

@@ -112,3 +112,103 @@ export const deleteMember = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+export const readMember = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const member = await Members.findById(id);
+    if (!member) {
+      return res.status(404).json({ error: "Member not found" });
+    }
+    res.json(member);
+  } catch (error) {
+    console.error("Error fetching album:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const updateMember = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, designation, workPlace, email, phone, mailingAddress,removePhoto } = req.body;
+    const newProfilePhoto = req.file;
+
+    // Validate required fields
+    if (!name || !designation || !workPlace || !email || !phone || !mailingAddress) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+
+    // Trim fields to remove whitespace
+    const fields = { name, designation, workPlace, email, phone, mailingAddress };
+    for (const key of Object.keys(fields)) {
+      if (typeof fields[key] === 'string') {
+        fields[key] = fields[key].trim();
+      }
+    }
+
+    // Prepare update object
+    const updateData = { ...fields };
+
+    // Find the member by ID
+    const member = await Members.findById(id);
+    if (!member) {
+      return res.status(404).json({ message: "Member not found" });
+    }
+
+    // Check if user wants to remove the photo
+    if (removePhoto === 'true') {
+      if (member.profilePhoto && member.profilePhoto.length > 0) {
+        const oldPublicId = member.profilePhoto[0].public_id;
+        try {
+          await cloudinary.uploader.destroy(oldPublicId);
+        } catch (error) {
+          console.error("Error deleting old photo from Cloudinary:", error);
+        }
+      }
+      updateData.profilePhoto = []; // Or set to null if your schema allows
+    } else if (newProfilePhoto) {
+      // If a new photo is uploaded, handle the old photo
+      if (member.profilePhoto && member.profilePhoto.length > 0) {
+        const oldPublicId = member.profilePhoto[0].public_id;
+        try {
+          await cloudinary.uploader.destroy(oldPublicId);
+        } catch (error) {
+          console.error("Error deleting old photo from Cloudinary:", error);
+        }
+      }
+
+      // Upload new photo to Cloudinary
+      const uploadedImage = await new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream((error, result) => {
+          if (error) {
+            reject(error);
+          } else {
+            resolve({
+              url: result.secure_url,
+              public_id: result.public_id,
+            });
+          }
+        });
+        stream.end(newProfilePhoto.buffer);
+      });
+
+      // Update profile photo details
+      updateData.profilePhoto = [{
+        url: uploadedImage.url,
+        public_id: uploadedImage.public_id
+      }];
+    }
+
+    // Update member details in the database
+    const updatedMember = await Members.findByIdAndUpdate(id, updateData, { new: true });
+
+    if (!updatedMember) {
+      return res.status(404).json({ message: "Member not found" });
+    }
+
+    res.status(200).json(updatedMember);
+  } catch (error) {
+    console.error("Error updating member:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
