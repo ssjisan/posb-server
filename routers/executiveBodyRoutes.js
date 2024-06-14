@@ -8,6 +8,7 @@ import {
   listExecutiveCommittee,
   deleteCommittee,
   readCommittee,
+  updateExecutiveCommittee,
 } from "../controller/executiveBodyController.js";
 
 router.post("/create-committee", requiredSignIn, createExecutiveBody);
@@ -17,7 +18,12 @@ router.delete(
   requiredSignIn,
   deleteCommittee
 );
-router.get("/executive-committee/:slug",  requiredSignIn,
-    readCommittee);
+router.get("/executive-committee/:slug", requiredSignIn, readCommittee);
+
+router.put(
+  "/executive-committee/:id",
+  requiredSignIn,
+  updateExecutiveCommittee
+);
 
 export default router;

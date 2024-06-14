@@ -89,3 +89,37 @@ export const readCommittee = async (req, res) => {
     res.status(500).json({ message: 'Error fetching committee', error });
   }
 };
+
+export const updateExecutiveCommittee = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, members } = req.body;
+
+    // Ensure members array has the correct format
+    const formattedMembers = members.map(member => {
+      if (!member.memberId || typeof member.memberId !== 'string' || member.memberId.trim() === '') {
+        console.log(`Invalid memberId found: ${member.memberId}`);
+        throw new Error('Invalid memberId');
+      }
+      return {
+        member: member.memberId, // Ensure it's a string
+        position: member.position
+      };
+    });
+
+    const updatedCommittee = await ExecutiveBody.findByIdAndUpdate(
+      id,
+      { title, members: formattedMembers },
+      { new: true, runValidators: true }
+    ).populate('members.member');
+
+    if (!updatedCommittee) {
+      return res.status(404).json({ message: 'Committee not found' });
+    }
+
+    res.status(200).json(updatedCommittee);
+  } catch (error) {
+    console.error('Error updating committee:', error);
+    res.status(500).json({ message: 'Error updating committee', error: error.message });
+  }
+};
