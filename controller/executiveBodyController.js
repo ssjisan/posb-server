@@ -74,3 +74,18 @@ export const deleteCommittee = async (req, res) => {
     res.status(500).json({ message: "Error deleting committee" });
   }
 };
+
+
+export const readCommittee = async (req, res) => {
+  try {
+    const committee = await ExecutiveBody.findOne({ slug: req.params.slug }).populate('members.member');
+
+    if (!committee) {
+      return res.status(404).json({ message: 'Committee not found' });
+    }
+
+    res.status(200).json(committee);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching committee', error });
+  }
+};
