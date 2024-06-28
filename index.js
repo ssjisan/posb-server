@@ -7,7 +7,7 @@ import albumRoutes from "./routers/albumRoutes.js";
 import noticeRoutes from "./routers/noticeRoutes.js";
 import memberRoutes from "./routers/memberRoutes.js"
 import executiveBodyRoutes from "./routers/executiveBodyRoutes.js"
-
+import messageRoutes from "./routers/messageRoutes.js"
 import morgan from "morgan";
 import cors from "cors";
 
@@ -33,6 +33,7 @@ app.use(albumRoutes);
 app.use(noticeRoutes);
 app.use(memberRoutes);
 app.use(executiveBodyRoutes);
+app.use(messageRoutes);
 
 const port = process.env.PORT || 8001;
 
