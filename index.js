@@ -8,6 +8,7 @@ import noticeRoutes from "./routers/noticeRoutes.js";
 import memberRoutes from "./routers/memberRoutes.js"
 import executiveBodyRoutes from "./routers/executiveBodyRoutes.js"
 import messageRoutes from "./routers/messageRoutes.js"
+import contactInfoRoutes from "./routers/contactInfoRoutes.js"
 import morgan from "morgan";
 import cors from "cors";
 
@@ -34,6 +35,7 @@ app.use(noticeRoutes);
 app.use(memberRoutes);
 app.use(executiveBodyRoutes);
 app.use(messageRoutes);
+app.use(contactInfoRoutes);
 
 const port = process.env.PORT || 8001;
 
