@@ -5,11 +5,12 @@ import authRoutes from "./routers/authRoutes.js";
 import eventRoutes from "./routers/eventRoutes.js";
 import albumRoutes from "./routers/albumRoutes.js";
 import noticeRoutes from "./routers/noticeRoutes.js";
-import memberRoutes from "./routers/memberRoutes.js"
-import executiveBodyRoutes from "./routers/executiveBodyRoutes.js"
-import messageRoutes from "./routers/messageRoutes.js"
-import contactInfoRoutes from "./routers/contactInfoRoutes.js"
-import journalRoutes from "./routers/journalRoutes.js"
+import memberRoutes from "./routers/memberRoutes.js";
+import executiveBodyRoutes from "./routers/executiveBodyRoutes.js";
+import messageRoutes from "./routers/messageRoutes.js";
+import contactInfoRoutes from "./routers/contactInfoRoutes.js";
+import journalRoutes from "./routers/journalRoutes.js";
+import formRoutes from "./routers/formRoutes.js";
 import morgan from "morgan";
 import cors from "cors";
 
@@ -38,6 +39,7 @@ app.use(executiveBodyRoutes);
 app.use(messageRoutes);
 app.use(contactInfoRoutes);
 app.use(journalRoutes);
+app.use(formRoutes);
 
 const port = process.env.PORT || 8001;
 
