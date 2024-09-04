@@ -6,7 +6,6 @@ const eventModel = new mongoose.Schema(
       type: String,
       trim: true,
       required: true,
-      maxlength: 160,
     },
     slug: {
       type: String,
@@ -18,10 +17,13 @@ const eventModel = new mongoose.Schema(
       required: true,
       maxlength: 2000,
     },
+    registrationLink: {
+      type: String,
+      trim: true,
+    },
     location: {
       type: String,
       required: true,
-      maxlength: 2000,
     },
     eventDate: {
       type: Date,
@@ -36,9 +38,9 @@ const eventModel = new mongoose.Schema(
       data: Buffer,
       contentType: String,
     },
-    published: {
+    linkExpire: {
       type: Boolean,
-      default: true,
+      default: false,
     },
   },
   { timestamps: true }

@@ -4,23 +4,30 @@ import fs from "fs";
 
 export const createEvent = async (req, res) => {
   try {
-    const { name, description, location, eventDate, eventTime, published } =
-      req.fields;
+    const {
+      name,
+      description,
+      location,
+      eventDate,
+      eventTime,
+      linkExpire,
+      registrationLink,
+    } = req.fields;
     const { image } = req.files;
     switch (true) {
       case !name.trim():
         return res.json({ error: "Name is required" });
-      case !description.trim():
-        return res.json({ error: "Description is required" });
       case !location.trim():
         return res.json({ error: "Location is required" });
+      case !description.trim():
+        return res.json({ error: "Description is required" });
       case !eventDate.trim():
         return res.json({ error: "Event Date is required" });
       case !eventTime.trim():
         return res.json({ error: "Event Time is required" });
-      case !published.trim():
-        return res.json({ error: "Event Published is required" });
-      case image && image.size > 1000000:
+      case !image:
+        return res.json({ error: "Event Cover is required" });
+      case image.size > 1000000:
         return res.json({ error: "Image size should not be more than 1MB" });
     }
     const parsedEventDate = new Date(eventDate);
@@ -38,8 +45,10 @@ export const createEvent = async (req, res) => {
       event.image.data = fs.readFileSync(image.path);
       event.image.contentType = image.type;
     }
+
     await event.save();
     res.json(event);
+
   } catch (err) {
     console.log(err);
     res.status(400).json(err.message);
@@ -62,9 +71,9 @@ export const updateEvent = async (req, res) => {
         return res.json({ error: "Event Date is required" });
       case !eventTime.trim():
         return res.json({ error: "Event Time is required" });
-      case !published.trim():
-        return res.json({ error: "Event Published is required" });
-      case image && image.size > 1000000:
+      case !image:
+        return res.json({ error: "Event Cover is required" });
+      case image.size > 1000000:
         return res.json({ error: "Image size should not be more than 1MB" });
     }
 
