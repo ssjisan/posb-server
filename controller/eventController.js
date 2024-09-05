@@ -10,10 +10,11 @@ export const createEvent = async (req, res) => {
       location,
       eventDate,
       eventTime,
-      linkExpire,
       registrationLink,
     } = req.fields;
     const { image } = req.files;
+
+    // Validation checks
     switch (true) {
       case !name.trim():
         return res.json({ error: "Name is required" });
@@ -30,17 +31,25 @@ export const createEvent = async (req, res) => {
       case image.size > 1000000:
         return res.json({ error: "Image size should not be more than 1MB" });
     }
+
     const parsedEventDate = new Date(eventDate);
     if (isNaN(parsedEventDate)) {
       return res.json({ error: "Invalid Event Date" });
     }
 
+    // Ensure registrationLink defaults to an empty string if not provided
     const event = new Events({
-      ...req.fields,
+      name,
+      description,
+      location,
       eventDate: parsedEventDate,
+      eventTime,
+      registrationLink: registrationLink ? registrationLink.trim() : "", // Default to empty string
+      linkExpire: false, // Always set to false initially
       slug: slugify(name),
     });
 
+    // Handle image upload
     if (image) {
       event.image.data = fs.readFileSync(image.path);
       event.image.contentType = image.type;
@@ -55,11 +64,20 @@ export const createEvent = async (req, res) => {
   }
 };
 
+
 export const updateEvent = async (req, res) => {
   try {
-    const { name, description, location, eventDate, eventTime, published } =
-      req.fields;
+    const { name, description, location, eventDate, eventTime, registrationLink } = req.fields;
     const { image } = req.files;
+
+    // Fetch the existing event from the database
+    const event = await Events.findById(req.params.eventId);
+
+    if (!event) {
+      return res.status(404).json({ error: "Event not found" });
+    }
+
+    // Validation checks
     switch (true) {
       case !name.trim():
         return res.json({ error: "Name is required" });
@@ -71,9 +89,9 @@ export const updateEvent = async (req, res) => {
         return res.json({ error: "Event Date is required" });
       case !eventTime.trim():
         return res.json({ error: "Event Time is required" });
-      case !image:
+      case !image && !event.image.data:
         return res.json({ error: "Event Cover is required" });
-      case image.size > 1000000:
+      case image && image.size > 1000000:
         return res.json({ error: "Image size should not be more than 1MB" });
     }
 
@@ -82,16 +100,27 @@ export const updateEvent = async (req, res) => {
       return res.json({ error: "Invalid Event Date" });
     }
 
-    const event = await Events.findByIdAndUpdate(req.params.eventId, {
-      ...req.fields,
-      eventDate: parsedEventDate,
-      slug: slugify(name),
-    });
+    // Check if the eventDate has been changed and update linkExpire accordingly
+    if (parsedEventDate > new Date()) {
+      // If eventDate is in the future, set linkExpire to false
+      event.linkExpire = false;
+    }
 
+    // Update event fields
+    event.name = name;
+    event.description = description;
+    event.location = location;
+    event.eventDate = parsedEventDate;
+    event.eventTime = eventTime;
+    event.registrationLink = registrationLink ? registrationLink.trim() : ""; // Default to empty string
+    event.slug = slugify(name);
+
+    // Handle image update
     if (image) {
       event.image.data = fs.readFileSync(image.path);
       event.image.contentType = image.type;
     }
+
     await event.save();
     res.json(event);
   } catch (err) {
