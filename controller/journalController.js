@@ -2,7 +2,6 @@ import Journal from "../model/journalModal.js";
 
 export const createJournal = async (req, res) => {
   try {
-    
     const { title, publishedDate, link } = req.body;
 
     switch (true) {
@@ -38,11 +37,10 @@ export const listOfJournal = async (req, res) => {
   }
 };
 
-
 export const readJournal = async (req, res) => {
   try {
-    const { journalId } = req.params; // Get the journal ID from the request params
-    const journal = await Journal.findById(journalId); // Find the journal by ID
+    const { linkId } = req.params; // Get the journal ID from the request params
+    const journal = await Journal.findById(linkId); // Find the journal by ID
 
     if (!journal) {
       return res.status(404).json({ error: "Journal not found" }); // Return error if the journal doesn't exist
@@ -57,10 +55,10 @@ export const readJournal = async (req, res) => {
 
 export const removeJournal = async (req, res) => {
   try {
-    const { journalId } = req.params; // Get the journal ID from the request parameters
+    const { linkId } = req.params; // Get the journal ID from the request parameters
 
     // Find and delete the journal by ID
-    const deletedJournal = await Journal.findByIdAndDelete(journalId);
+    const deletedJournal = await Journal.findByIdAndDelete(linkId);
 
     if (!deletedJournal) {
       return res.status(404).json({ error: "Journal not found" }); // Return error if the journal doesn't exist
@@ -75,12 +73,12 @@ export const removeJournal = async (req, res) => {
 
 export const updateJournal = async (req, res) => {
   try {
-    const { journalId } = req.params; // Get the journal ID from the request parameters
+    const { linkId } = req.params; // Get the journal ID from the request parameters
     const { title, publishedDate, link } = req.body; // Get the updated data from the request body
 
     // Find the journal by ID and update it with the new data
     const updatedJournal = await Journal.findByIdAndUpdate(
-      journalId,
+      linkId,
       {
         title,
         publishedDate: new Date(publishedDate), // Convert the publishedDate string to a Date object
@@ -90,12 +88,12 @@ export const updateJournal = async (req, res) => {
     );
 
     if (!updatedJournal) {
-      return res.status(404).json({ error: 'Journal not found' });
+      return res.status(404).json({ error: "Journal not found" });
     }
 
     res.json(updatedJournal); // Send back the updated journal data
   } catch (err) {
     console.error("Error updating journal:", err);
-    res.status(500).json({ error: 'Internal server error' }); // Handle server errors
+    res.status(500).json({ error: "Internal server error" }); // Handle server errors
   }
 };

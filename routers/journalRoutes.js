@@ -6,11 +6,11 @@ import { createJournal,listOfJournal,readJournal,updateJournal,removeJournal } f
 // import middleware
 import { requiredSignIn } from "../middlewares/authMiddleware.js";
 
-router.post("/add_journal", requiredSignIn, createJournal);
-router.get("/journals", listOfJournal);
-router.get("/journal/:journalId", requiredSignIn, readJournal);
-router.put("/journal/:journalId", requiredSignIn, updateJournal);
-router.delete("/journal/:journalId", removeJournal);
+router.post("/add_link", requiredSignIn, createJournal);
+router.get("/links", listOfJournal);
+router.get("/link/:linkId", requiredSignIn, readJournal);
+router.put("/link/:linkId", requiredSignIn, updateJournal);
+router.delete("/link/:linkId", removeJournal);
 
 
 export default router;
