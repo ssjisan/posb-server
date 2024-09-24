@@ -1,6 +1,6 @@
 import slugify from "slugify";
 import Albums from "../model/albumModel.js";
-import {v2 as cloudinary} from 'cloudinary';
+import { v2 as cloudinary } from "cloudinary";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -122,7 +122,9 @@ export const deleteAlbum = async (req, res) => {
 export const updateAlbum = async (req, res) => {
   try {
     const { name } = req.body;
-    const removeImageIds = req.body.removeImageIds ? JSON.parse(req.body.removeImageIds) : []; // Parse JSON string
+    const removeImageIds = req.body.removeImageIds
+      ? JSON.parse(req.body.removeImageIds)
+      : []; // Parse JSON string
     const newImages = req.files;
     const albumId = req.params.albumId;
 
@@ -144,25 +146,26 @@ export const updateAlbum = async (req, res) => {
         // Remove image from Cloudinary
         await cloudinary.uploader.destroy(public_id);
         // Remove image from album
-        album.images = album.images.filter(image => image.public_id !== public_id);
+        album.images = album.images.filter(
+          (image) => image.public_id !== public_id
+        );
       }
     }
 
-
-   // Upload new images to Cloudinary and add to album
-   if (newImages && newImages.length > 0) {
-    for (const image of newImages) {
-      const uploadResult = await uploadImageToCloudinary(image.buffer);
-      if (!uploadResult) {
-        throw new Error("Failed to upload image to Cloudinary");
+    // Upload new images to Cloudinary and add to album
+    if (newImages && newImages.length > 0) {
+      for (const image of newImages) {
+        const uploadResult = await uploadImageToCloudinary(image.buffer);
+        if (!uploadResult) {
+          throw new Error("Failed to upload image to Cloudinary");
+        }
+        album.images.push({
+          url: uploadResult.url,
+          public_id: uploadResult.public_id,
+        });
       }
-      album.images.push({
-        url: uploadResult.url,
-        public_id: uploadResult.public_id,
-      });
     }
-  }
-  
+
     // Save the updated album
     await album.save();
 
