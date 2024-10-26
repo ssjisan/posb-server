@@ -1,34 +1,35 @@
 import express from "express";
+const router = express.Router();
+import { requiredSignIn } from "../middlewares/authMiddleware.js";
 import {
-  createAlbum,
+  uploadNewAlbum,
   listOfAllAlbums,
   deleteAlbum,
-  updateAlbum,
   readAlbum,
+  updateAlbum,
+  updateAlbumSequence
 } from "../controller/albumController.js";
 import multer from "multer";
 
-const router = express.Router();
-import { requiredSignIn } from "../middlewares/authMiddleware.js";
-
-// Multer configuration
+// Use memoryStorage as you don't need to save files to disk
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
 router.post(
-  "/album",
+  "/upload_album",
   requiredSignIn,
   upload.array("images", 50),
-  createAlbum
+  uploadNewAlbum
 );
 router.get("/albums", listOfAllAlbums);
-router.get("/album/:slug", readAlbum);
 router.delete("/album/:albumId", requiredSignIn, deleteAlbum);
+router.get("/album/:albumId", readAlbum);
 router.put(
   "/album/:albumId",
   upload.array("newImages", 50),
   requiredSignIn,
   updateAlbum
 );
+router.post('/update-album-order', requiredSignIn, updateAlbumSequence);
 
 export default router;

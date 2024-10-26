@@ -16,16 +16,21 @@ cloudinary.config({
 
 const uploadImageToCloudinary = async (imageBuffer) => {
   return new Promise((resolve, reject) => {
-    const stream = cloudinary.uploader.upload_stream((error, result) => {
-      if (error) {
-        reject(error);
-      } else {
-        resolve({
-          url: result.secure_url,
-          public_id: result.public_id,
-        });
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        folder: "posb/members", // Specify the folder name here
+      },
+      (error, result) => {
+        if (error) {
+          reject(error);
+        } else {
+          resolve({
+            url: result.secure_url,
+            public_id: result.public_id,
+          });
+        }
       }
-    });
+    );
     stream.end(imageBuffer);
   });
 };
@@ -130,18 +135,40 @@ export const readMember = async (req, res) => {
 export const updateMember = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, designation, workPlace, email, phone, mailingAddress,removePhoto } = req.body;
+    const {
+      name,
+      designation,
+      workPlace,
+      email,
+      phone,
+      mailingAddress,
+      removePhoto,
+    } = req.body;
     const newProfilePhoto = req.file;
 
     // Validate required fields
-    if (!name || !designation || !workPlace || !email || !phone || !mailingAddress) {
+    if (
+      !name ||
+      !designation ||
+      !workPlace ||
+      !email ||
+      !phone ||
+      !mailingAddress
+    ) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
     // Trim fields to remove whitespace
-    const fields = { name, designation, workPlace, email, phone, mailingAddress };
+    const fields = {
+      name,
+      designation,
+      workPlace,
+      email,
+      phone,
+      mailingAddress,
+    };
     for (const key of Object.keys(fields)) {
-      if (typeof fields[key] === 'string') {
+      if (typeof fields[key] === "string") {
         fields[key] = fields[key].trim();
       }
     }
@@ -156,7 +183,7 @@ export const updateMember = async (req, res) => {
     }
 
     // Check if user wants to remove the photo
-    if (removePhoto === 'true') {
+    if (removePhoto === "true") {
       if (member.profilePhoto && member.profilePhoto.length > 0) {
         const oldPublicId = member.profilePhoto[0].public_id;
         try {
@@ -193,14 +220,18 @@ export const updateMember = async (req, res) => {
       });
 
       // Update profile photo details
-      updateData.profilePhoto = [{
-        url: uploadedImage.url,
-        public_id: uploadedImage.public_id
-      }];
+      updateData.profilePhoto = [
+        {
+          url: uploadedImage.url,
+          public_id: uploadedImage.public_id,
+        },
+      ];
     }
 
     // Update member details in the database
-    const updatedMember = await Members.findByIdAndUpdate(id, updateData, { new: true });
+    const updatedMember = await Members.findByIdAndUpdate(id, updateData, {
+      new: true,
+    });
 
     if (!updatedMember) {
       return res.status(404).json({ message: "Member not found" });

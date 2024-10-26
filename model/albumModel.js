@@ -13,8 +13,10 @@ const albumSchema = new mongoose.Schema(
     },
     images: [
       {
-        url: { type: String, required: true },
+        src: { type: String, required: true },
         public_id: { type: String, required: true },
+        name: { type: String, required: true }, // Image name
+        size: { type: Number, required: true }, // Image size in bytes
       },
     ],
   },
