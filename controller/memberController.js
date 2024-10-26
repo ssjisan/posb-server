@@ -135,46 +135,21 @@ export const readMember = async (req, res) => {
 export const updateMember = async (req, res) => {
   try {
     const { id } = req.params;
-    const {
-      name,
-      designation,
-      workPlace,
-      email,
-      phone,
-      mailingAddress,
-      removePhoto,
-    } = req.body;
+    const { name, designation, workPlace, email, phone, mailingAddress, removePhoto } = req.body;
     const newProfilePhoto = req.file;
 
     // Validate required fields
-    if (
-      !name ||
-      !designation ||
-      !workPlace ||
-      !email ||
-      !phone ||
-      !mailingAddress
-    ) {
+    if (!name || !designation || !workPlace || !email || !phone || !mailingAddress) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
     // Trim fields to remove whitespace
-    const fields = {
-      name,
-      designation,
-      workPlace,
-      email,
-      phone,
-      mailingAddress,
-    };
+    const fields = { name, designation, workPlace, email, phone, mailingAddress };
     for (const key of Object.keys(fields)) {
       if (typeof fields[key] === "string") {
         fields[key] = fields[key].trim();
       }
     }
-
-    // Prepare update object
-    const updateData = { ...fields };
 
     // Find the member by ID
     const member = await Members.findById(id);
@@ -183,65 +158,56 @@ export const updateMember = async (req, res) => {
     }
 
     // Check if user wants to remove the photo
-    if (removePhoto === "true") {
-      if (member.profilePhoto && member.profilePhoto.length > 0) {
-        const oldPublicId = member.profilePhoto[0].public_id;
-        try {
-          await cloudinary.uploader.destroy(oldPublicId);
-        } catch (error) {
-          console.error("Error deleting old photo from Cloudinary:", error);
-        }
+    if (removePhoto === "true" && member.profilePhoto && member.profilePhoto.length > 0) {
+      const oldPublicId = member.profilePhoto[0].public_id;
+      try {
+        await cloudinary.uploader.destroy(oldPublicId); // Delete old photo from Cloudinary
+      } catch (error) {
+        console.error("Error deleting old photo from Cloudinary:", error);
+        return res.status(500).json({ message: "Failed to remove old photo from Cloudinary" });
       }
-      updateData.profilePhoto = []; // Or set to null if your schema allows
-    } else if (newProfilePhoto) {
-      // If a new photo is uploaded, handle the old photo
+      member.profilePhoto = []; // Remove the photo reference from the member document
+    }
+
+    // If a new photo is uploaded, handle the old photo
+    if (newProfilePhoto) {
       if (member.profilePhoto && member.profilePhoto.length > 0) {
         const oldPublicId = member.profilePhoto[0].public_id;
         try {
-          await cloudinary.uploader.destroy(oldPublicId);
+          await cloudinary.uploader.destroy(oldPublicId); // Delete old photo from Cloudinary
         } catch (error) {
           console.error("Error deleting old photo from Cloudinary:", error);
+          return res.status(500).json({ message: "Failed to delete old photo from Cloudinary" });
         }
       }
 
       // Upload new photo to Cloudinary
-      const uploadedImage = await new Promise((resolve, reject) => {
-        const stream = cloudinary.uploader.upload_stream((error, result) => {
-          if (error) {
-            reject(error);
-          } else {
-            resolve({
-              url: result.secure_url,
-              public_id: result.public_id,
-            });
-          }
-        });
-        stream.end(newProfilePhoto.buffer);
-      });
-
-      // Update profile photo details
-      updateData.profilePhoto = [
-        {
+      try {
+        const uploadedImage = await uploadImageToCloudinary(newProfilePhoto.buffer);
+        member.profilePhoto = [{
           url: uploadedImage.url,
           public_id: uploadedImage.public_id,
-        },
-      ];
+        }];
+      } catch (error) {
+        console.error("Error uploading new photo to Cloudinary:", error);
+        return res.status(500).json({ message: "Failed to upload new photo to Cloudinary" });
+      }
     }
 
-    // Update member details in the database
-    const updatedMember = await Members.findByIdAndUpdate(id, updateData, {
-      new: true,
-    });
+    // Update member details with new fields
+    member.name = fields.name;
+    member.designation = fields.designation;
+    member.workPlace = fields.workPlace;
+    member.email = fields.email;
+    member.phone = fields.phone;
+    member.mailingAddress = fields.mailingAddress;
 
-    if (!updatedMember) {
-      return res.status(404).json({ message: "Member not found" });
-    }
+    // Save the updated member to the database
+    await member.save();
 
-    res.status(200).json(updatedMember);
+    res.status(200).json({ message: "Member updated successfully", member });
   } catch (error) {
     console.error("Error updating member:", error);
     res.status(500).json({ message: error.message });
   }
 };
-
-// db changed
