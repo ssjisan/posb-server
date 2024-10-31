@@ -16,32 +16,36 @@ export const getContactInfo = async (req, res) => {
   
 
 // Create or Update Contact Info
+// Create or Update Contact Info
 export const UpdateContactInfo = async (req, res) => {
-    try {
-      const { phoneNumber, whatsapp } = req.body;
-  
-      // Validation
-      if (!phoneNumber || !whatsapp) {
-        return res.status(400).json({ error: "Phone number and WhatsApp number are required" });
-      }
-  
-      // Check if contact info already exists
-      const existingContact = await ContactInfo.findOne().exec();
-      if (existingContact) {
-        // Update existing contact info
-        existingContact.phoneNumber = phoneNumber;
-        existingContact.whatsapp = whatsapp;
-        await existingContact.save();
-        res.json(existingContact);
-      } else {
-        // Create new contact info
-        const newContact = new ContactInfo({ phoneNumber, whatsapp });
-        await newContact.save();
-        res.json(newContact);
-      }
-    } catch (err) {
-      console.log(err);
-      res.status(400).json({ error: err.message });
+  try {
+    let { phoneNumber, whatsapp } = req.body;
+
+    // Type Validation
+    if (typeof phoneNumber !== "string" || typeof whatsapp !== "string") {
+      return res.status(400).json({ error: "Invalid data format" });
     }
-  };
-  
+
+    // Trim values to ensure clean data
+    phoneNumber = phoneNumber.trim();
+    whatsapp = whatsapp.trim();
+
+    // Check if contact info already exists
+    const existingContact = await ContactInfo.findOne().exec();
+    if (existingContact) {
+      // Update existing contact info
+      existingContact.phoneNumber = phoneNumber;
+      existingContact.whatsapp = whatsapp;
+      await existingContact.save();
+      res.json(existingContact);
+    } else {
+      // Create new contact info
+      const newContact = new ContactInfo({ phoneNumber, whatsapp });
+      await newContact.save();
+      res.json(newContact);
+    }
+  } catch (err) {
+    console.log(err);
+    res.status(400).json({ error: err.message });
+  }
+};
