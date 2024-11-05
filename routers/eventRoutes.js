@@ -9,6 +9,7 @@ import {
   imageOfEvent,
   readEvent,
   removeEvent,
+  activeEvents
 } from "../controller/eventController.js";
 
 // import middleware
@@ -22,6 +23,7 @@ router.put(
   updateEvent
 );
 router.get("/events",requiredSignIn, listEvents);
+router.get("/all_events", activeEvents);
 router.get("/event/image/:eventId", imageOfEvent);
 router.get("/event/:slug", readEvent);
 router.delete("/event/:eventId", requiredSignIn, removeEvent);

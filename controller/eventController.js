@@ -175,6 +175,20 @@ export const listEvents = async (req, res) => {
   }
 };
 
+export const activeEvents = async (req, res) => {
+  try {
+    const events = await Events.find({ eventExpired: false })
+      .select("-image")
+      .sort({ createdAt: -1 }) // Sort by creation date in descending order
+      .limit(12); // Adjust the limit as needed
+
+    res.json(events);
+  } catch (err) {
+    console.log(err.message);
+    res.status(500).json({ error: "Failed to fetch active events" });
+  }
+};
+
 export const imageOfEvent = async (req, res) => {
   try {
     const event = await Events.findById(req.params.eventId).select("image");
