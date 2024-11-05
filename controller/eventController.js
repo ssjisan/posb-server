@@ -11,6 +11,7 @@ export const createEvent = async (req, res) => {
       eventDate,
       eventTime,
       registrationLink,
+      linkExpireDate,
     } = req.fields;
     const { image } = req.files;
 
@@ -32,9 +33,25 @@ export const createEvent = async (req, res) => {
         return res.json({ error: "Image size should not be more than 1MB" });
     }
 
+    // Parse eventDate and validate
     const parsedEventDate = new Date(eventDate);
     if (isNaN(parsedEventDate)) {
       return res.json({ error: "Invalid Event Date" });
+    }
+
+    // Determine event expiration
+    const isExpired =
+      new Date(parsedEventDate).setDate(parsedEventDate.getDate() + 1) <=
+      new Date();
+    // This sets the expiration to start at the end of the eventDate
+
+    // Parse linkExpireDate if provided and ensure it's valid
+    let parsedLinkExpireDate = null;
+    if (registrationLink && linkExpireDate) {
+      parsedLinkExpireDate = new Date(linkExpireDate);
+      if (isNaN(parsedLinkExpireDate)) {
+        return res.json({ error: "Invalid Link Expiry Date" });
+      }
     }
 
     // Ensure registrationLink defaults to an empty string if not provided
@@ -44,9 +61,10 @@ export const createEvent = async (req, res) => {
       location,
       eventDate: parsedEventDate,
       eventTime,
-      registrationLink: registrationLink ? registrationLink.trim() : "", // Default to empty string
-      linkExpire: false, // Always set to false initially
+      registrationLink: registrationLink ? registrationLink.trim() : "",
+      linkExpireDate: parsedLinkExpireDate, // Set normalized linkExpireDate
       slug: slugify(name),
+      eventExpired: isExpired, // Set eventExpired status
     });
 
     // Handle image upload
@@ -57,17 +75,23 @@ export const createEvent = async (req, res) => {
 
     await event.save();
     res.json(event);
-
   } catch (err) {
     console.log(err);
-    res.status(400).json(err.message);
+    res.status(400).json({ error: err.message });
   }
 };
 
-
 export const updateEvent = async (req, res) => {
   try {
-    const { name, description, location, eventDate, eventTime, registrationLink } = req.fields;
+    const {
+      name,
+      description,
+      location,
+      eventDate,
+      eventTime,
+      registrationLink,
+      linkExpireDate,
+    } = req.fields;
     const { image } = req.files;
 
     // Fetch the existing event from the database
@@ -81,10 +105,10 @@ export const updateEvent = async (req, res) => {
     switch (true) {
       case !name.trim():
         return res.json({ error: "Name is required" });
-      case !description.trim():
-        return res.json({ error: "Description is required" });
       case !location.trim():
         return res.json({ error: "Location is required" });
+      case !description.trim():
+        return res.json({ error: "Description is required" });
       case !eventDate.trim():
         return res.json({ error: "Event Date is required" });
       case !eventTime.trim():
@@ -95,15 +119,24 @@ export const updateEvent = async (req, res) => {
         return res.json({ error: "Image size should not be more than 1MB" });
     }
 
+    // Parse and validate eventDate
     const parsedEventDate = new Date(eventDate);
     if (isNaN(parsedEventDate)) {
       return res.json({ error: "Invalid Event Date" });
     }
 
-    // Check if the eventDate has been changed and update linkExpire accordingly
-    if (parsedEventDate > new Date()) {
-      // If eventDate is in the future, set linkExpire to false
-      event.linkExpire = false;
+    // Determine event expiration (expiration starts at the end of the event date)
+    const isExpired =
+      new Date(parsedEventDate).setDate(parsedEventDate.getDate() + 1) <=
+      new Date();
+
+    // Parse linkExpireDate if provided and ensure it's valid
+    let parsedLinkExpireDate = null;
+    if (registrationLink && linkExpireDate) {
+      parsedLinkExpireDate = new Date(linkExpireDate);
+      if (isNaN(parsedLinkExpireDate)) {
+        return res.json({ error: "Invalid Link Expiry Date" });
+      }
     }
 
     // Update event fields
@@ -112,8 +145,10 @@ export const updateEvent = async (req, res) => {
     event.location = location;
     event.eventDate = parsedEventDate;
     event.eventTime = eventTime;
-    event.registrationLink = registrationLink ? registrationLink.trim() : ""; // Default to empty string
+    event.registrationLink = registrationLink ? registrationLink.trim() : "";
+    event.linkExpireDate = parsedLinkExpireDate; // Use normalized linkExpireDate
     event.slug = slugify(name);
+    event.eventExpired = isExpired; // Update eventExpired status
 
     // Handle image update
     if (image) {
@@ -125,17 +160,16 @@ export const updateEvent = async (req, res) => {
     res.json(event);
   } catch (err) {
     console.log(err);
-    res.status(400).json(err.message);
+    res.status(400).json({ error: err.message });
   }
 };
-
 export const listEvents = async (req, res) => {
   try {
-    const event = await Events.find({})
+    const events = await Events.find({})
       .select("-image")
-      .limit(12)
-      .sort({ createdAt: -1 });
-    res.json(event);
+      .sort({ eventExpired: 1, createdAt: -1 }) // Sort by eventExpired status first, then by creation date
+      .limit(12);
+    res.json(events);
   } catch (err) {
     console.log(err.message);
   }
@@ -163,6 +197,7 @@ export const readEvent = async (req, res) => {
     console.log(err);
   }
 };
+
 export const removeEvent = async (req, res) => {
   try {
     const event = await Events.findByIdAndDelete(req.params.eventId);

@@ -13,7 +13,7 @@ import journalRoutes from "./routers/journalRoutes.js";
 import formRoutes from "./routers/formRoutes.js";
 import morgan from "morgan";
 import cors from "cors";
-import './middlewares/expireLinks.js'; // Import the cron job
+import './job/eventExpire.js'; // Import the cron job
 
 dotenv.config();
 

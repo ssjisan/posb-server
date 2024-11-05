@@ -38,7 +38,12 @@ const eventModel = new mongoose.Schema(
       data: Buffer,
       contentType: String,
     },
-    linkExpire: {
+    linkExpireDate: {
+      type: Date,
+      trim: true,
+    },
+    eventExpired: {
+      // New field to store expiration status
       type: Boolean,
       default: false,
     },

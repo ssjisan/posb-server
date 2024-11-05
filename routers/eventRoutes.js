@@ -21,7 +21,7 @@ router.put(
   formidable(),
   updateEvent
 );
-router.get("/events", listEvents);
+router.get("/events",requiredSignIn, listEvents);
 router.get("/event/image/:eventId", imageOfEvent);
 router.get("/event/:slug", readEvent);
 router.delete("/event/:eventId", requiredSignIn, removeEvent);
