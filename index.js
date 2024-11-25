@@ -9,11 +9,12 @@ import memberRoutes from "./routers/memberRoutes.js";
 import executiveBodyRoutes from "./routers/executiveBodyRoutes.js";
 import messageRoutes from "./routers/messageRoutes.js";
 import contactInfoRoutes from "./routers/contactInfoRoutes.js";
-import journalRoutes from "./routers/journalRoutes.js";
+import linkRoutes from "./routers/linkRoutes.js";
 import formRoutes from "./routers/formRoutes.js";
+import videoRoutes from "./routers/videoRoutes.js";
 import morgan from "morgan";
 import cors from "cors";
-import './job/eventExpire.js'; // Import the cron job
+import "./job/eventExpire.js"; // Import the cron job
 
 dotenv.config();
 
@@ -39,8 +40,9 @@ app.use(memberRoutes);
 app.use(executiveBodyRoutes);
 app.use(messageRoutes);
 app.use(contactInfoRoutes);
-app.use(journalRoutes);
+app.use(linkRoutes);
 app.use(formRoutes);
+app.use(videoRoutes);
 
 const port = process.env.PORT || 8001;
 

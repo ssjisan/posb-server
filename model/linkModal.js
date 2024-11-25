@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const journalModal = new mongoose.Schema(
+const linkModal = new mongoose.Schema(
   {
     title: {
       type: String,
@@ -22,4 +22,4 @@ const journalModal = new mongoose.Schema(
   { timestamps: true }
 );
 
-export default mongoose.model("Journals", journalModal);
+export default mongoose.model("Links", linkModal);
