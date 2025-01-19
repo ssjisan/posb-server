@@ -26,10 +26,21 @@ mongoose
   .then(() => console.log("MongoDB connected"))
   .catch((err) => console.error(err));
 
+// CORS configuration
+  const corsOptions = {
+    origin: process.env.CLIENT_URL || "http://localhost:5173" || "http://localhost:5174", // Frontend URL
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true,
+  };
+
+
 // middelwares
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(morgan("dev"));
 app.use(express.json());
+
+
+
 
 // router middelware //
 app.use(authRoutes);
