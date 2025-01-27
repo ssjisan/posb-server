@@ -101,7 +101,7 @@ export const createEvent = async (req, res) => {
       details,
       registrationLink: registrationLink ? registrationLink.trim() : "",
       registrationStartDate, // Will be undefined if not provided
-      registrationEndDate,   // Will be undefined if not provided
+      registrationEndDate, // Will be undefined if not provided
     });
 
     // Save the new event or course document to the database
@@ -116,7 +116,6 @@ export const createEvent = async (req, res) => {
 };
 
 // ********************************************** The Create Course Event Function End Here ********************************************** //
-
 
 // ********************************************** Fetching events with filters and pagination Start Here ********************************************** //
 
@@ -172,16 +171,13 @@ export const updateEventsSequence = async (req, res) => {
 
     await Events.bulkWrite(bulkOps);
 
-    res
-      .status(200)
-      .json({ message: "Event sequence updated successfully" });
+    res.status(200).json({ message: "Event sequence updated successfully" });
   } catch (error) {
     res.status(500).json({ error: "Error updating event sequence" });
   }
 };
 
 // ********************************************** Update Sequence Start Here ********************************************** //
-
 
 // ********************************************** For Delete Event Start Here ********************************************** //
 
@@ -210,3 +206,92 @@ export const deleteEvent = async (req, res) => {
 };
 
 // ********************************************** For Delete Event Start Here ********************************************** //
+
+// ********************************************** For Read Event Start Here ********************************************** //
+
+export const readEvent = async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    const event = await Events.findById(eventId);
+    if (!event) {
+      return res.status(404).json({ error: "Event not found" });
+    }
+    res.json(event);
+  } catch (error) {
+    console.error("Error fetching event:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+// ********************************************** For Read Event End Here ********************************************** //
+
+
+// ********************************************** For Update Event Start Here ********************************************** //
+
+export const updateEvent = async (req, res) => {
+  try {
+    const { eventId } = req.params; // Assuming the ID parameter is 'eventId'
+    let {
+      name,
+      details,
+      eventDate,
+      eventTime,
+      location,
+      registrationLink,
+      registrationStartDate,
+      registrationEndDate,
+    } = req.body;
+    const coverPhoto = req.file;
+
+    // Find the event or course in the database
+    const event = await Events.findById(eventId);
+    if (!event) {
+      return res.status(404).json({ message: "Event or course not found" });
+    }
+
+    // Update fields if provided in the request body
+    event.name = name || event.name;
+    event.details = details || event.details;
+    event.eventDate = eventDate || event.eventDate;
+    event.eventTime = eventTime || event.eventTime;
+    event.eventTime = eventTime || event.eventTime;
+    event.registrationLink = registrationLink || event.registrationLink;
+    event.location = location || event.location;
+    event.registrationStartDate = registrationStartDate || event.registrationStartDate;
+    event.registrationEndDate = registrationEndDate || event.registrationEndDate;
+
+    // Handle cover photo update if a new file is provided
+    if (coverPhoto) {
+      // Remove old cover photo from Cloudinary (if exists)
+      if (event.coverPhoto && event.coverPhoto.length > 0) {
+        const publicId = event.coverPhoto[0].public_id;
+        try {
+          await cloudinary.uploader.destroy(publicId);
+        } catch (err) {
+          console.error("Error deleting old cover photo from Cloudinary:", err);
+          return res.status(500).json({ error: "Failed to delete old cover photo" });
+        }
+      }
+
+      // Upload new cover photo to Cloudinary
+      try {
+        const uploadedImage = await uploadImageToCloudinary(coverPhoto.buffer);
+        event.coverPhoto = [{ url: uploadedImage.url, public_id: uploadedImage.public_id }];
+      } catch (err) {
+        console.error("Error uploading new cover photo to Cloudinary:", err);
+        return res.status(500).json({ error: "Failed to upload new cover photo" });
+      }
+    }
+
+    // Save the updated event or course
+    await event.save();
+
+    // Return the updated event or course in the response
+    res.status(200).json(event);
+  } catch (err) {
+    console.error("Error updating event or course:", err);
+    res.status(500).json({ message: "An error occurred while updating the event or course" });
+  }
+};
+
+// ********************************************** For Update Event Start Here ********************************************** //

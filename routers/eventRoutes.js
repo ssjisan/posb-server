@@ -8,8 +8,8 @@ import {
   getFilteredEvents,
   updateEventsSequence,
   deleteEvent,
-  // readEvent,
-  // removeEvent,
+  readEvent,
+  updateEvent,
   // activeEvents
 } from "../controller/eventController.js";
 
@@ -30,6 +30,7 @@ router.post(
 router.get("/events", getFilteredEvents);
 router.post("/update-event-order", requiredSignIn, updateEventsSequence);
 router.delete("/events/:eventId", requiredSignIn, deleteEvent);
-
+router.get("/events/:eventId", readEvent);
+router.put("/event/:eventId", requiredSignIn,upload.single("coverPhoto"), updateEvent);
 
 export default router;
