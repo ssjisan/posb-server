@@ -2,26 +2,23 @@ import mongoose from "mongoose";
 
 const eventModel = new mongoose.Schema(
   {
+    coverPhoto: [
+      {
+        url: { type: String, required: true },
+        public_id: { type: String, required: true },
+      },
+    ],
     name: {
       type: String,
       trim: true,
       required: true,
     },
-    slug: {
-      type: String,
-      trim: true,
-      lowercase: true,
-    },
-    description: {
-      type: String,
-      required: true,
-      maxlength: 2000,
-    },
-    registrationLink: {
-      type: String,
-      trim: true,
-    },
     location: {
+      type: String,
+      trim: true,
+      required: true,
+    },
+    details: {
       type: String,
       required: true,
     },
@@ -34,18 +31,21 @@ const eventModel = new mongoose.Schema(
       type: String,
       required: true,
     },
-    image: {
-      data: Buffer,
-      contentType: String,
+    sequence: {
+      type: Number,
+      default: 0,
     },
-    linkExpireDate: {
+    registrationLink: {
+      type: String,
+      trim: true,
+    },
+    registrationStartDate: {
       type: Date,
       trim: true,
     },
-    eventExpired: {
-      // New field to store expiration status
-      type: Boolean,
-      default: false,
+    registrationEndDate: {
+      type: Date,
+      trim: true,
     },
   },
   { timestamps: true }

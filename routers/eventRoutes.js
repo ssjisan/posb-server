@@ -1,31 +1,35 @@
 import express from "express";
-import formidable from "express-formidable";
+import multer from "multer";
+
 const router = express.Router();
 // import controller
 import {
   createEvent,
-  updateEvent,
-  listEvents,
-  imageOfEvent,
-  readEvent,
-  removeEvent,
-  activeEvents
+  getFilteredEvents,
+  updateEventsSequence,
+  deleteEvent,
+  // readEvent,
+  // removeEvent,
+  // activeEvents
 } from "../controller/eventController.js";
 
 // import middleware
 import { requiredSignIn } from "../middlewares/authMiddleware.js";
 
-router.post("/event", requiredSignIn, formidable(), createEvent);
-router.put(
-  "/event/:eventId",
+// Multer configuration
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
+
+// Route to create a new doctor profile
+router.post(
+  "/create-event",
   requiredSignIn,
-  formidable(),
-  updateEvent
+  upload.single("coverPhoto"),
+  createEvent
 );
-router.get("/events",requiredSignIn, listEvents);
-router.get("/all_events", activeEvents);
-router.get("/event/image/:eventId", imageOfEvent);
-router.get("/event/:slug", readEvent);
-router.delete("/event/:eventId", requiredSignIn, removeEvent);
+router.get("/events", getFilteredEvents);
+router.post("/update-event-order", requiredSignIn, updateEventsSequence);
+router.delete("/events/:eventId", requiredSignIn, deleteEvent);
+
 
 export default router;

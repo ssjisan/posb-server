@@ -1,222 +1,212 @@
-import slugify from "slugify";
+import { v2 as cloudinary } from "cloudinary";
+import dotenv from "dotenv";
 import Events from "../model/eventModel.js";
-import fs from "fs";
+
+dotenv.config();
+
+const { CLOUD_NAME, API_KEY, API_SECRET } = process.env;
+
+if (!CLOUD_NAME || !API_KEY || !API_SECRET) {
+  throw new Error(
+    "Cloudinary configuration is missing. Check your environment variables."
+  );
+}
+
+// ********************************************** The Cloudinary upload function start here ********************************************** //
+
+cloudinary.config({
+  cloud_name: CLOUD_NAME,
+  api_key: API_KEY,
+  api_secret: API_SECRET,
+});
+
+const uploadImageToCloudinary = async (imageBuffer) => {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        folder: "posb/events", // Specify the folder name here
+      },
+      (error, result) => {
+        if (error) {
+          reject(error);
+        } else {
+          resolve({
+            url: result.secure_url,
+            public_id: result.public_id,
+          });
+        }
+      }
+    );
+    stream.end(imageBuffer);
+  });
+};
+
+// ********************************************** The Cloudinary upload function end here ********************************************** //
+
+// ********************************************** The Create Event Function Start Here ********************************************** //
 
 export const createEvent = async (req, res) => {
   try {
-    const {
+    let {
       name,
-      description,
-      location,
+      details,
       eventDate,
       eventTime,
+      location,
       registrationLink,
-      linkExpireDate,
-    } = req.fields;
-    const { image } = req.files;
+      registrationStartDate,
+      registrationEndDate,
+    } = req.body;
+    const coverPhoto = req.file;
 
-    // Validation checks
-    switch (true) {
-      case !name.trim():
-        return res.json({ error: "Name is required" });
-      case !location.trim():
-        return res.json({ error: "Location is required" });
-      case !description.trim():
-        return res.json({ error: "Description is required" });
-      case !eventDate.trim():
-        return res.json({ error: "Event Date is required" });
-      case !eventTime.trim():
-        return res.json({ error: "Event Time is required" });
-      case !image:
-        return res.json({ error: "Event Cover is required" });
-      case image.size > 1000000:
-        return res.json({ error: "Image size should not be more than 1MB" });
-    }
+    // Validate required fields with improved checks
+    if (!name || !name.trim())
+      return res.status(400).json({ error: "Title is required" });
+    if (!location || !location.trim())
+      return res.status(400).json({ error: "Location is required" });
+    if (!eventDate || !eventDate.trim())
+      return res.status(400).json({ error: "Event Date is required" });
+    if (!eventTime || !eventTime.trim())
+      return res.status(400).json({ error: "Event Time is required" });
+    if (!details || !details.trim())
+      return res
+        .status(400)
+        .json({ error: "Details info about event or course is required" });
 
-    // Parse eventDate and validate
-    const parsedEventDate = new Date(eventDate);
-    if (isNaN(parsedEventDate)) {
-      return res.json({ error: "Invalid Event Date" });
-    }
-
-    // Determine event expiration
-    const isExpired =
-      new Date(parsedEventDate).setDate(parsedEventDate.getDate() + 1) <=
-      new Date();
-    // This sets the expiration to start at the end of the eventDate
-
-    // Parse linkExpireDate if provided and ensure it's valid
-    let parsedLinkExpireDate = null;
-    if (registrationLink && linkExpireDate) {
-      parsedLinkExpireDate = new Date(linkExpireDate);
-      if (isNaN(parsedLinkExpireDate)) {
-        return res.json({ error: "Invalid Link Expiry Date" });
+    // Validate if coverPhoto is provided
+    if (!coverPhoto)
+      return res.status(400).json({ error: "Cover photo is required" });
+    // Upload the Event cover to Cloudinary if provided
+    let uploadedImage = null;
+    if (coverPhoto) {
+      try {
+        uploadedImage = await uploadImageToCloudinary(coverPhoto.buffer);
+      } catch (err) {
+        console.error("Error uploading image to Cloudinary:", err);
+        return res
+          .status(500)
+          .json({ error: "Failed to upload profile photo" });
       }
     }
 
-    // Ensure registrationLink defaults to an empty string if not provided
-    const event = new Events({
+    // Create a new profile document based on the validated data
+    const newEvent = new Events({
+      coverPhoto: uploadedImage
+        ? [{ url: uploadedImage.url, public_id: uploadedImage.public_id }]
+        : [],
       name,
-      description,
       location,
-      eventDate: parsedEventDate,
+      eventDate,
       eventTime,
+      details,
       registrationLink: registrationLink ? registrationLink.trim() : "",
-      linkExpireDate: parsedLinkExpireDate, // Set normalized linkExpireDate
-      slug: slugify(name),
-      eventExpired: isExpired, // Set eventExpired status
+      registrationStartDate, // Will be undefined if not provided
+      registrationEndDate,   // Will be undefined if not provided
     });
 
-    // Handle image upload
-    if (image) {
-      event.image.data = fs.readFileSync(image.path);
-      event.image.contentType = image.type;
-    }
+    // Save the new event or course document to the database
+    await newEvent.save();
 
-    await event.save();
-    res.json(event);
+    // Respond with the created profile
+    res.status(201).json(newEvent);
   } catch (err) {
-    console.log(err);
-    res.status(400).json({ error: err.message });
+    console.error("Error creating event:", err);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
-export const updateEvent = async (req, res) => {
-  try {
-    const {
-      name,
-      description,
-      location,
-      eventDate,
-      eventTime,
-      registrationLink,
-      linkExpireDate,
-    } = req.fields;
-    const { image } = req.files;
+// ********************************************** The Create Course Event Function End Here ********************************************** //
 
-    // Fetch the existing event from the database
-    const event = await Events.findById(req.params.eventId);
+
+// ********************************************** Fetching events with filters and pagination Start Here ********************************************** //
+
+export const getFilteredEvents = async (req, res) => {
+  try {
+    // Extract query parameters
+    const limit = parseInt(req.query.limit) || 5; // Default limit to 5
+    const skip = parseInt(req.query.skip) || 0; // Default skip to 0
+    const { status } = req.query; // Extract status (running, archived)
+
+    const currentDate = new Date();
+    let query = {}; // Default query fetches all events
+
+    // Build query based on status
+    if (status === "archived") {
+      query = { eventDate: { $lt: currentDate } }; // Archived events
+    } else if (status === "running") {
+      query = { eventDate: { $gte: currentDate } }; // Running events
+    }
+
+    // Fetch filtered and paginated courses/events
+    const events = await Events.find(query)
+      .sort({ sequence: 1, createdAt: -1 }) // Sort by sequence first, then creation date
+      .skip(skip)
+      .limit(limit);
+
+    // Check if there are more courses/events left to load
+    const totalEvents = await Events.countDocuments(query); // Count documents matching the query
+    const hasMore = skip + limit < totalEvents;
+
+    // Respond with filtered and paginated data
+    res.status(200).json({ events, hasMore });
+  } catch (err) {
+    console.error("Error fetching filtered events:", err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// ********************************************** Fetching events with filters and pagination End Here ********************************************** //
+
+// ********************************************** Update Sequence Start Here ********************************************** //
+
+export const updateEventsSequence = async (req, res) => {
+  try {
+    const { reorderedEvent } = req.body; // Array of resources with updated sequences
+
+    const bulkOps = reorderedEvent.map((resource, index) => ({
+      updateOne: {
+        filter: { _id: resource._id },
+        update: { $set: { sequence: index + 1 } }, // Update the sequence field
+      },
+    }));
+
+    await Events.bulkWrite(bulkOps);
+
+    res
+      .status(200)
+      .json({ message: "Event sequence updated successfully" });
+  } catch (error) {
+    res.status(500).json({ error: "Error updating event sequence" });
+  }
+};
+
+// ********************************************** Update Sequence Start Here ********************************************** //
+
+
+// ********************************************** For Delete Event Start Here ********************************************** //
+
+export const deleteEvent = async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    const event = await Events.findByIdAndDelete(eventId);
 
     if (!event) {
-      return res.status(404).json({ error: "Event not found" });
+      return res.status(404).json({ message: "Event not found" });
     }
 
-    // Validation checks
-    switch (true) {
-      case !name.trim():
-        return res.json({ error: "Name is required" });
-      case !location.trim():
-        return res.json({ error: "Location is required" });
-      case !description.trim():
-        return res.json({ error: "Description is required" });
-      case !eventDate.trim():
-        return res.json({ error: "Event Date is required" });
-      case !eventTime.trim():
-        return res.json({ error: "Event Time is required" });
-      case !image && !event.image.data:
-        return res.json({ error: "Event Cover is required" });
-      case image && image.size > 1000000:
-        return res.json({ error: "Image size should not be more than 1MB" });
-    }
-
-    // Parse and validate eventDate
-    const parsedEventDate = new Date(eventDate);
-    if (isNaN(parsedEventDate)) {
-      return res.json({ error: "Invalid Event Date" });
-    }
-
-    // Determine event expiration (expiration starts at the end of the event date)
-    const isExpired =
-      new Date(parsedEventDate).setDate(parsedEventDate.getDate() + 1) <=
-      new Date();
-
-    // Parse linkExpireDate if provided and ensure it's valid
-    let parsedLinkExpireDate = null;
-    if (registrationLink && linkExpireDate) {
-      parsedLinkExpireDate = new Date(linkExpireDate);
-      if (isNaN(parsedLinkExpireDate)) {
-        return res.json({ error: "Invalid Link Expiry Date" });
+    // Delete profile photo from Cloudinary
+    if (event.coverPhoto && event.coverPhoto.length > 0) {
+      try {
+        const publicId = event.coverPhoto[0].public_id;
+        await cloudinary.uploader.destroy(publicId);
+      } catch (error) {
+        res.json({ message: error.message });
       }
     }
-
-    // Update event fields
-    event.name = name;
-    event.description = description;
-    event.location = location;
-    event.eventDate = parsedEventDate;
-    event.eventTime = eventTime;
-    event.registrationLink = registrationLink ? registrationLink.trim() : "";
-    event.linkExpireDate = parsedLinkExpireDate; // Use normalized linkExpireDate
-    event.slug = slugify(name);
-    event.eventExpired = isExpired; // Update eventExpired status
-
-    // Handle image update
-    if (image) {
-      event.image.data = fs.readFileSync(image.path);
-      event.image.contentType = image.type;
-    }
-
-    await event.save();
-    res.json(event);
+    res.status(200).json({ message: "Event deleted successfully" });
   } catch (err) {
-    console.log(err);
-    res.status(400).json({ error: err.message });
-  }
-};
-export const listEvents = async (req, res) => {
-  try {
-    const events = await Events.find({})
-      .select("-image")
-      .sort({ eventExpired: 1, createdAt: -1 }) // Sort by eventExpired status first, then by creation date
-      .limit(12);
-    res.json(events);
-  } catch (err) {
-    console.log(err.message);
+    res.status(500).json({ message: err.message });
   }
 };
 
-export const activeEvents = async (req, res) => {
-  try {
-    const events = await Events.find({ eventExpired: false })
-      .select("-image")
-      .sort({ createdAt: -1 }) // Sort by creation date in descending order
-      .limit(12); // Adjust the limit as needed
-
-    res.json(events);
-  } catch (err) {
-    console.log(err.message);
-    res.status(500).json({ error: "Failed to fetch active events" });
-  }
-};
-
-export const imageOfEvent = async (req, res) => {
-  try {
-    const event = await Events.findById(req.params.eventId).select("image");
-    if (event.image.data) {
-      res.set("Content-Type", event.image.contentType);
-      return res.send(event.image.data);
-    }
-  } catch (err) {
-    console.log(err);
-  }
-};
-
-export const readEvent = async (req, res) => {
-  try {
-    const event = await Events.findOne({ slug: req.params.slug }).select(
-      "-image"
-    );
-    res.json(event);
-  } catch (err) {
-    console.log(err);
-  }
-};
-
-export const removeEvent = async (req, res) => {
-  try {
-    const event = await Events.findByIdAndDelete(req.params.eventId);
-    res.json(event);
-  } catch (err) {
-    console.log(err);
-  }
-};
+// ********************************************** For Delete Event Start Here ********************************************** //
