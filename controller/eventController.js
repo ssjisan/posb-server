@@ -295,3 +295,73 @@ export const updateEvent = async (req, res) => {
 };
 
 // ********************************************** For Update Event Start Here ********************************************** //
+
+export const getLatestEvent = async (req, res) => {
+  try {
+    const currentDate = new Date();
+
+    // Find the nearest event after today
+    const nearestEvent = await Events.findOne({ eventDate: { $gte: currentDate } })
+      .sort({ eventDate: 1 }) // Sort by nearest date (ascending)
+      .exec();
+
+    if (!nearestEvent) {
+      // No future events found
+      return res.status(404).json({ message: "No upcoming events found" });
+    }
+
+    // Respond with the nearest event
+    res.status(200).json({ event: nearestEvent });
+  } catch (err) {
+    console.error("Error fetching the latest event:", err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+
+export const getEventsByStatus = async (req, res) => {
+  const currentDate = new Date();
+  const startOfToday = new Date(
+    currentDate.getFullYear(),
+    currentDate.getMonth(),
+    currentDate.getDate()
+  ); // Start of the current day (00:00:00)
+
+  const { status } = req.query; // Extract status from query parameters
+
+  try {
+    // Build query based on status
+    let query = {};
+    if (status === "archived") {
+      query = { endDate: { $lt: startOfToday } }; // Events before today
+    } else if (status === "running") {
+      query = { endDate: { $gte: startOfToday } }; // Events today or later
+    }
+
+    // Fetch data from the database
+    const events = await Events.find(query).sort({ endDate: 1 }); // Sort by endDate
+    res.status(200).json(events);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+
+export const getActiveEvents = async (req, res) => {
+  try {
+    const currentDate = new Date(); // Current date and time
+
+    // Query to find events where eventDate has not passed yet
+    const query = { eventDate: { $gte: currentDate } };
+
+    // Fetch active events, sorted by sequence (ascending) and eventDate (ascending)
+    const activeEvents = await Events.find(query)
+      .sort({ sequence: 1, eventDate: 1 });
+
+    // Respond with the active events
+    res.status(200).json(activeEvents);
+  } catch (error) {
+    console.error("Error fetching active events:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};

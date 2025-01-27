@@ -10,7 +10,8 @@ import {
   deleteEvent,
   readEvent,
   updateEvent,
-  // activeEvents
+  getLatestEvent,
+  getActiveEvents
 } from "../controller/eventController.js";
 
 // import middleware
@@ -32,5 +33,7 @@ router.post("/update-event-order", requiredSignIn, updateEventsSequence);
 router.delete("/events/:eventId", requiredSignIn, deleteEvent);
 router.get("/events/:eventId", readEvent);
 router.put("/event/:eventId", requiredSignIn,upload.single("coverPhoto"), updateEvent);
+router.get("/latest-event", getLatestEvent);
+router.get("/events-by-status", getActiveEvents);
 
 export default router;
