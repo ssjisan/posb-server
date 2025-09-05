@@ -4,6 +4,8 @@ import { v2 as cloudinary } from "cloudinary";
 import dotenv from "dotenv";
 import fs from "fs";
 import path from "path";
+import archiver from "archiver";
+import axios from "axios";
 
 dotenv.config();
 
@@ -18,11 +20,11 @@ cloudinary.config({
 });
 
 // Function to upload image to Cloudinary
-const uploadImageToCloudinary = async (imageBuffer) => {
+const uploadImageToCloudinary = async (imageBuffer, name) => {
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
       {
-        folder: "posb/album", // Specify the folder name here
+        folder: `posb/albums/${name}`,
       },
       (error, result) => {
         if (error) {
@@ -67,7 +69,7 @@ export const uploadNewAlbum = async (req, res) => {
 
     // Upload each image to Cloudinary
     for (const image of images) {
-      const uploadResult = await uploadImageToCloudinary(image.buffer);
+      const uploadResult = await uploadImageToCloudinary(image.buffer, name);
 
       uploadedImages.push({
         src: uploadResult.secure_url,
@@ -101,7 +103,10 @@ export const uploadNewAlbum = async (req, res) => {
 export const listOfAllAlbums = async (req, res) => {
   try {
     // Fetch all albums from the database
-    const albums = await Albums.find();
+    const albums = await Albums.find().sort({
+      sequence: 1,
+      createdAt: -1,
+    })
 
     // Return the list of albums as a JSON response
     res.status(200).json(albums);
@@ -225,17 +230,55 @@ export const updateAlbum = async (req, res) => {
 //  Update Sequence of Album
 export const updateAlbumSequence = async (req, res) => {
   try {
-    const { reorderedAlbums } = req.body;
+    const { reorderedAlbums } = req.body; // Array of links with updated sequences
 
-    // Clear the current collection
-    await Albums.deleteMany({});
+    const bulkOps = reorderedAlbums.map((resource, index) => ({
+      updateOne: {
+        filter: { _id: resource._id },
+        update: { $set: { sequence: index + 1 } }, // Update the sequence field
+      },
+    }));
 
-    // Insert the reordered videos
-    await Albums.insertMany(reorderedAlbums);
+    await Albums.bulkWrite(bulkOps);
 
     res.status(200).json({ message: "Album sequence updated successfully" });
-  } catch (err) {
-    console.error("Error updating album sequence:", err);
-    res.status(500).json({ message: "Internal server error" });
+  } catch (error) {
+    res.status(500).json({ error: "Error updating resources sequence" });
+  }
+};
+
+// Download ablum
+export const downloadAlbum = async (req, res) => {
+  try {
+    const { slug } = req.params;
+
+    // ✅ Find album
+    const album = await Albums.findOne({ slug });
+    if (!album) {
+      return res.status(404).json({ message: "Album not found" });
+    }
+
+    // ✅ Prepare zip headers
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${album.name}.zip"`
+    );
+    res.setHeader("Content-Type", "application/zip");
+
+    const archive = archiver("zip", { zlib: { level: 9 } });
+    archive.pipe(res);
+
+    // ✅ Fetch and add each image
+    for (const img of album.images) {
+      const response = await axios.get(img.src, {
+        responseType: "arraybuffer",
+      });
+      archive.append(response.data, { name: img.name });
+    }
+
+    await archive.finalize();
+  } catch (error) {
+    console.error("Error downloading album:", error);
+    res.status(500).json({ message: "Failed to download album" });
   }
 };

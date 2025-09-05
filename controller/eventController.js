@@ -20,7 +20,7 @@ cloudinary.config({
   api_secret: API_SECRET,
 });
 
-const uploadImageToCloudinary = async (imageBuffer) => {
+const uploadImageToCloudinary = async (imageBuffer, name) => {
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
       {
@@ -41,77 +41,128 @@ const uploadImageToCloudinary = async (imageBuffer) => {
   });
 };
 
+const deleteFromCloudinary = async (public_id) => {
+  try {
+    await cloudinary.uploader.destroy(public_id);
+  } catch (err) {
+    console.error("Error deleting image from Cloudinary:", err);
+  }
+};
+
 // ********************************************** The Cloudinary upload function end here ********************************************** //
 
 // ********************************************** The Create Event Function Start Here ********************************************** //
 
-export const createEvent = async (req, res) => {
+export const eventGeneration = async (req, res) => {
   try {
-    let {
+    const eventId = req.params.eventId;
+    const {
       name,
+      location,
       details,
       eventDate,
       eventTime,
-      location,
-      registrationLink,
+      registrationRequired,
+      registrationFees,
       registrationStartDate,
       registrationEndDate,
+      paymentStartDate,
+      paymentEndDate,
+      coverPhotoRemoved,
     } = req.body;
-    const coverPhoto = req.file;
 
-    // Validate required fields with improved checks
-    if (!name || !name.trim())
-      return res.status(400).json({ error: "Title is required" });
-    if (!location || !location.trim())
-      return res.status(400).json({ error: "Location is required" });
-    if (!eventDate || !eventDate.trim())
-      return res.status(400).json({ error: "Event Date is required" });
-    if (!eventTime || !eventTime.trim())
-      return res.status(400).json({ error: "Event Time is required" });
-    if (!details || !details.trim())
-      return res
-        .status(400)
-        .json({ error: "Details info about event or course is required" });
-
-    // Validate if coverPhoto is provided
-    if (!coverPhoto)
-      return res.status(400).json({ error: "Cover photo is required" });
-    // Upload the Event cover to Cloudinary if provided
-    let uploadedImage = null;
-    if (coverPhoto) {
-      try {
-        uploadedImage = await uploadImageToCloudinary(coverPhoto.buffer);
-      } catch (err) {
-        console.error("Error uploading image to Cloudinary:", err);
-        return res
-          .status(500)
-          .json({ error: "Failed to upload profile photo" });
-      }
+    // Validation
+    if (!name || name.trim() === "") {
+      return res.status(400).json({ message: "Event name is required" });
+    }
+    if (!eventDate || eventDate.trim() === "") {
+      return res.status(400).json({ message: "Event date is required" });
+    }
+    if (!eventTime || eventTime.trim() === "") {
+      return res.status(400).json({ message: "Event time is required" });
     }
 
-    // Create a new profile document based on the validated data
-    const newEvent = new Events({
-      coverPhoto: uploadedImage
-        ? [{ url: uploadedImage.url, public_id: uploadedImage.public_id }]
-        : [],
-      name,
-      location,
-      eventDate,
-      eventTime,
-      details,
-      registrationLink: registrationLink ? registrationLink.trim() : "",
-      registrationStartDate, // Will be undefined if not provided
-      registrationEndDate, // Will be undefined if not provided
-    });
+    let event = null;
 
-    // Save the new event or course document to the database
-    await newEvent.save();
+    if (eventId) {
+      // ===== UPDATE =====
+      event = await Events.findById(eventId);
+      if (!event) {
+        return res.status(404).json({ message: "Event not found" });
+      }
 
-    // Respond with the created profile
-    res.status(201).json(newEvent);
-  } catch (err) {
-    console.error("Error creating event:", err);
-    res.status(500).json({ message: "Internal Server Error" });
+      // Update fields
+      event.name = name;
+      event.location = location;
+      event.details = details || "";
+      event.eventDate = eventDate;
+      event.eventTime = eventTime;
+      event.registrationRequired = registrationRequired;
+      event.registrationFees = registrationFees || "";
+      event.registrationStartDate = registrationStartDate || null;
+      event.registrationEndDate = registrationEndDate || null;
+      event.paymentStartDate = paymentStartDate || null;
+      event.paymentEndDate = paymentEndDate || null;
+
+      // Handle cover photo removal
+      if (coverPhotoRemoved && event.coverPhoto) {
+        await deleteFromCloudinary(event.coverPhoto.public_id);
+        event.coverPhoto = null;
+      }
+
+      // Handle new image upload
+      if (req.file) {
+        // Delete old one if exists
+        if (event.coverPhoto) {
+          await deleteFromCloudinary(event.coverPhoto.public_id);
+        }
+        const uploadedImage = await uploadImageToCloudinary(req.file.buffer);
+        event.coverPhoto = {
+          url: uploadedImage.url,
+          public_id: uploadedImage.public_id,
+        };
+      }
+
+      await event.save();
+      return res
+        .status(200)
+        .json({ message: "Event updated successfully", event });
+    } else {
+      // ===== CREATE =====
+      let coverPhotoData = null;
+      if (req.file) {
+        const uploadedImage = await uploadImageToCloudinary(req.file.buffer);
+        coverPhotoData = {
+          url: uploadedImage.url,
+          public_id: uploadedImage.public_id,
+        };
+      }
+
+      event = new Events({
+        name,
+        location,
+        details,
+        eventDate,
+        eventTime,
+        registrationRequired,
+        registrationFees,
+        registrationStartDate,
+        registrationEndDate,
+        paymentStartDate,
+        paymentEndDate,
+        coverPhoto: coverPhotoData,
+      });
+
+      await event.save();
+      return res
+        .status(201)
+        .json({ message: "Event created successfully", event });
+    }
+  } catch (error) {
+    console.error("Error creating/updating event:", error);
+    return res
+      .status(500)
+      .json({ message: "Server error", error: error.message });
   }
 };
 
@@ -193,7 +244,7 @@ export const deleteEvent = async (req, res) => {
     // Delete profile photo from Cloudinary
     if (event.coverPhoto && event.coverPhoto.length > 0) {
       try {
-        const publicId = event.coverPhoto[0].public_id;
+        const publicId = event.coverPhoto.public_id;
         await cloudinary.uploader.destroy(publicId);
       } catch (error) {
         res.json({ message: error.message });
@@ -212,6 +263,8 @@ export const deleteEvent = async (req, res) => {
 export const readEvent = async (req, res) => {
   try {
     const { eventId } = req.params;
+    console.log("eventId", eventId);
+
     const event = await Events.findById(eventId);
     if (!event) {
       return res.status(404).json({ error: "Event not found" });
@@ -224,7 +277,6 @@ export const readEvent = async (req, res) => {
 };
 
 // ********************************************** For Read Event End Here ********************************************** //
-
 
 // ********************************************** For Update Event Start Here ********************************************** //
 
@@ -257,8 +309,10 @@ export const updateEvent = async (req, res) => {
     event.eventTime = eventTime || event.eventTime;
     event.registrationLink = registrationLink || event.registrationLink;
     event.location = location || event.location;
-    event.registrationStartDate = registrationStartDate || event.registrationStartDate;
-    event.registrationEndDate = registrationEndDate || event.registrationEndDate;
+    event.registrationStartDate =
+      registrationStartDate || event.registrationStartDate;
+    event.registrationEndDate =
+      registrationEndDate || event.registrationEndDate;
 
     // Handle cover photo update if a new file is provided
     if (coverPhoto) {
@@ -269,17 +323,23 @@ export const updateEvent = async (req, res) => {
           await cloudinary.uploader.destroy(publicId);
         } catch (err) {
           console.error("Error deleting old cover photo from Cloudinary:", err);
-          return res.status(500).json({ error: "Failed to delete old cover photo" });
+          return res
+            .status(500)
+            .json({ error: "Failed to delete old cover photo" });
         }
       }
 
       // Upload new cover photo to Cloudinary
       try {
         const uploadedImage = await uploadImageToCloudinary(coverPhoto.buffer);
-        event.coverPhoto = [{ url: uploadedImage.url, public_id: uploadedImage.public_id }];
+        event.coverPhoto = [
+          { url: uploadedImage.url, public_id: uploadedImage.public_id },
+        ];
       } catch (err) {
         console.error("Error uploading new cover photo to Cloudinary:", err);
-        return res.status(500).json({ error: "Failed to upload new cover photo" });
+        return res
+          .status(500)
+          .json({ error: "Failed to upload new cover photo" });
       }
     }
 
@@ -290,7 +350,9 @@ export const updateEvent = async (req, res) => {
     res.status(200).json(event);
   } catch (err) {
     console.error("Error updating event or course:", err);
-    res.status(500).json({ message: "An error occurred while updating the event or course" });
+    res.status(500).json({
+      message: "An error occurred while updating the event or course",
+    });
   }
 };
 
@@ -301,7 +363,9 @@ export const getLatestEvent = async (req, res) => {
     const currentDate = new Date();
 
     // Find the nearest event after today
-    const nearestEvent = await Events.findOne({ eventDate: { $gte: currentDate } })
+    const nearestEvent = await Events.findOne({
+      eventDate: { $gte: currentDate },
+    })
       .sort({ eventDate: 1 }) // Sort by nearest date (ascending)
       .exec();
 
@@ -317,7 +381,6 @@ export const getLatestEvent = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
-
 
 export const getEventsByStatus = async (req, res) => {
   const currentDate = new Date();
@@ -346,7 +409,6 @@ export const getEventsByStatus = async (req, res) => {
   }
 };
 
-
 export const getActiveEvents = async (req, res) => {
   try {
     const currentDate = new Date(); // Current date and time
@@ -355,8 +417,10 @@ export const getActiveEvents = async (req, res) => {
     const query = { eventDate: { $gte: currentDate } };
 
     // Fetch active events, sorted by sequence (ascending) and eventDate (ascending)
-    const activeEvents = await Events.find(query)
-      .sort({ sequence: 1, eventDate: 1 });
+    const activeEvents = await Events.find(query).sort({
+      sequence: 1,
+      eventDate: 1,
+    });
 
     // Respond with the active events
     res.status(200).json(activeEvents);

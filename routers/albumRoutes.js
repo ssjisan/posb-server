@@ -7,7 +7,8 @@ import {
   deleteAlbum,
   readAlbum,
   updateAlbum,
-  updateAlbumSequence
+  updateAlbumSequence,
+  downloadAlbum
 } from "../controller/albumController.js";
 import multer from "multer";
 
@@ -31,5 +32,6 @@ router.put(
   updateAlbum
 );
 router.post('/update-album-order', requiredSignIn, updateAlbumSequence);
+router.get("/:slug/download",requiredSignIn, downloadAlbum);
 
 export default router;

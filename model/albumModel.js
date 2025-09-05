@@ -11,6 +11,7 @@ const albumSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
+    sequence: { type: Number, default: 0 },
     images: [
       {
         src: { type: String, required: true },

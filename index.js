@@ -12,6 +12,8 @@ import contactInfoRoutes from "./routers/contactInfoRoutes.js";
 import linkRoutes from "./routers/linkRoutes.js";
 import formRoutes from "./routers/formRoutes.js";
 import videoRoutes from "./routers/videoRoutes.js";
+import dashboardRoutes from "./routers/dashboardRoutes.js";
+
 import morgan from "morgan";
 import cors from "cors";
 import "./job/eventExpire.js"; // Import the cron job
@@ -26,14 +28,10 @@ mongoose
   .then(() => console.log("MongoDB connected"))
   .catch((err) => console.error(err));
 
-
 // middelwares
 app.use(cors());
 app.use(morgan("dev"));
 app.use(express.json());
-
-
-
 
 // router middelware //
 app.use(authRoutes);
@@ -47,7 +45,7 @@ app.use(contactInfoRoutes);
 app.use(linkRoutes);
 app.use(formRoutes);
 app.use(videoRoutes);
-
+app.use(dashboardRoutes);
 const port = process.env.PORT || 8001;
 
 app.get("/", (req, res) => {

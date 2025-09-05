@@ -4,14 +4,14 @@ import multer from "multer";
 const router = express.Router();
 // import controller
 import {
-  createEvent,
   getFilteredEvents,
   updateEventsSequence,
   deleteEvent,
   readEvent,
   updateEvent,
   getLatestEvent,
-  getActiveEvents
+  getActiveEvents,
+  eventGeneration
 } from "../controller/eventController.js";
 
 // import middleware
@@ -21,13 +21,19 @@ import { requiredSignIn } from "../middlewares/authMiddleware.js";
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
-// Route to create a new doctor profile
 router.post(
   "/create-event",
   requiredSignIn,
   upload.single("coverPhoto"),
-  createEvent
+  eventGeneration
 );
+router.put(
+  "/update-event/:eventId",
+  requiredSignIn,
+  upload.single("coverPhoto"),
+  eventGeneration
+);
+
 router.get("/events", getFilteredEvents);
 router.post("/update-event-order", requiredSignIn, updateEventsSequence);
 router.delete("/events/:eventId", requiredSignIn, deleteEvent);
