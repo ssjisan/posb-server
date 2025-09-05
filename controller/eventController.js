@@ -263,7 +263,6 @@ export const deleteEvent = async (req, res) => {
 export const readEvent = async (req, res) => {
   try {
     const { eventId } = req.params;
-    console.log("eventId", eventId);
 
     const event = await Events.findById(eventId);
     if (!event) {

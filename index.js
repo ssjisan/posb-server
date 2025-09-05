@@ -13,7 +13,7 @@ import linkRoutes from "./routers/linkRoutes.js";
 import formRoutes from "./routers/formRoutes.js";
 import videoRoutes from "./routers/videoRoutes.js";
 import dashboardRoutes from "./routers/dashboardRoutes.js";
-
+import registrationRoutes from "./routers/registrationRoutes.js";
 import morgan from "morgan";
 import cors from "cors";
 import "./job/eventExpire.js"; // Import the cron job
@@ -46,6 +46,7 @@ app.use(linkRoutes);
 app.use(formRoutes);
 app.use(videoRoutes);
 app.use(dashboardRoutes);
+app.use(registrationRoutes);
 const port = process.env.PORT || 8001;
 
 app.get("/", (req, res) => {
