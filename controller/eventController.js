@@ -428,3 +428,15 @@ export const getActiveEvents = async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 };
+
+export const getEventList = async (req, res) => {
+  try {
+    // Fetch only `_id` and `name` for all events
+    const events = await Events.find({}, "_id name").sort({ createdAt: -1 });
+
+    res.status(200).json(events);
+  } catch (err) {
+    console.error("Error fetching event list:", err);
+    res.status(500).json({ message: "Failed to fetch event list." });
+  }
+};

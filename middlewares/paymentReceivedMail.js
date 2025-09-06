@@ -1,15 +1,13 @@
 import nodemailer from "nodemailer";
 
-export const sendEmail = async ({
+export const paymentReceivedMail = async ({
   to,
-  subject,
   name,
   registrationId,
   courseName,
-  registrationURL,
 }) => {
   try {
-    // Create transporter
+    // ✅ Create transporter (same Gmail config)
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
@@ -18,7 +16,7 @@ export const sendEmail = async ({
       },
     });
 
-    // HTML email template
+    // ✅ HTML template (similar look & feel)
     const htmlTemplate = `
       <div style="background-color:#fafafa; padding:24px; font-family:Arial, sans-serif; color:#ffffff;">
         <!-- Header with logo -->
@@ -27,29 +25,25 @@ export const sendEmail = async ({
                alt="POSB Logo" style="height:48px;" />
         </div>
 
-        <!-- Congratulations Image -->
+        <!-- Payment Image -->
         <div style="text-align:center; margin-top:24px;">
           <img src="https://res.cloudinary.com/dkppv2xbi/image/upload/v1757142557/congrats_srqxys.png" 
-               alt="Congratulations" style="width:100%; max-width:160px; height:auto;" />
+               alt="Payment Received" style="width:100%; max-width:160px; height:auto;" />
         </div>
 
         <!-- Content -->
         <div style="margin-top:24px; background:#ffffff; color:#111827; padding:20px; border-radius:8px;">
           <p style="font-size:14px; margin:0 0 12px 0;">Hello, ${name}</p>
-          <p style="font-size:14px; margin:0 0 12px 0;">Congratulations! You have successfully registered for the course: <strong>${courseName}</strong>.</p>
+          <p style="font-size:14px; margin:0 0 12px 0;">
+            Thank you for submitting your payment information for the course: <strong>${courseName}</strong>.
+          </p>
           <p style="font-size:14px; margin:0 0 12px 0;">
             Your Registration ID: <strong style="color:#114285;">${registrationId}</strong>
           </p>
           <p style="font-size:14px; margin:0 0 12px 0;">
-            Please keep it safe for future reference. <br/>
-            Track your registration process using this ID.
+            Please wait while we verify your payment. You will be notified by email once your payment is 
+            <strong>approved</strong> or <strong>rejected</strong>.
           </p>
-          <div style="text-align:center; margin-top:12px;">
-            <a href="${registrationURL}" 
-               style="display:inline-block; background:#114285; color:#fff; padding:12px 24px; border-radius:6px; text-decoration:none;">
-               Track Registration
-            </a>
-          </div>
           <p style="font-size:14px; margin:0;">Best regards,<br/>
             <strong>Paediatric Orthopaedic Society of Bangladesh</strong>
           </p>
@@ -65,17 +59,17 @@ export const sendEmail = async ({
       </div>
     `;
 
-    // Send mail
+    // ✅ Send mail
     await transporter.sendMail({
       from: "bdposb@gmail.com",
       to,
-      subject,
+      subject: "Thank you for your payment submission",
       html: htmlTemplate,
-      text: `Hi ${name}, You have successfully registered. Your Registration ID is ${registrationId}.`,
+      text: `Hi ${name}, we received your payment info for ${courseName}. Your Registration ID is ${registrationId}. Please wait for verification.`,
     });
 
-    console.log(`Email sent successfully to ${to}`);
+    console.log(`📧 Payment mail sent successfully to ${to}`);
   } catch (error) {
-    console.error("Error sending email:", error);
+    console.error("❌ Error sending payment received mail:", error);
   }
 };

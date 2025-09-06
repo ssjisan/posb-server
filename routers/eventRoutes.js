@@ -11,7 +11,8 @@ import {
   updateEvent,
   getLatestEvent,
   getActiveEvents,
-  eventGeneration
+  eventGeneration,
+  getEventList
 } from "../controller/eventController.js";
 
 // import middleware
@@ -41,5 +42,6 @@ router.get("/events/:eventId", readEvent);
 router.put("/event/:eventId", requiredSignIn,upload.single("coverPhoto"), updateEvent);
 router.get("/latest-event", getLatestEvent);
 router.get("/events-by-status", getActiveEvents);
+router.get("/events-list",requiredSignIn, getEventList);
 
 export default router;
