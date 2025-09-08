@@ -9,8 +9,8 @@ const registrationSchema = new mongoose.Schema(
       unique: true,
     },
     name: { type: String, required: true },
-    email: { type: String, required: true },
-    phone: { type: String, required: true },
+    email: { type: String, required: true, unique: true },
+    phone: { type: String, required: true, unique: true },
     designation: { type: String, required: true },
     workplace: { type: String, required: true },
     course: {
@@ -20,6 +20,7 @@ const registrationSchema = new mongoose.Schema(
     },
     transactionId: {
       type: String,
+      unique: true,
     },
     senderNumber: {
       type: String,
