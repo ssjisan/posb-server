@@ -7,6 +7,8 @@ import {
   getAllRegistrations,
   approveRegistration,
   rejectRegistration,
+  getRegistrationsByCourseId,
+  getConfirmedRegistrationsByCourseId
 } from "../controller/registrationController.js";
 import { requiredSignIn } from "../middlewares/authMiddleware.js";
 
@@ -19,4 +21,7 @@ router.put("/registration/:registrationId/payment", updatePaymentInfo);
 router.get("/registrations", requiredSignIn, getAllRegistrations);
 router.post("/registration/approve", requiredSignIn, approveRegistration);
 router.post("/registration/reject", requiredSignIn, rejectRegistration);
+router.get("/registrations/:courseId", requiredSignIn, getRegistrationsByCourseId);
+router.get("/registration/confirmation/:courseId", requiredSignIn, getConfirmedRegistrationsByCourseId);
+
 export default router;

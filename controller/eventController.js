@@ -242,7 +242,7 @@ export const deleteEvent = async (req, res) => {
     }
 
     // Delete profile photo from Cloudinary
-    if (event.coverPhoto && event.coverPhoto.length > 0) {
+    if (event.coverPhoto && event.coverPhoto.public_id) {
       try {
         const publicId = event.coverPhoto.public_id;
         await cloudinary.uploader.destroy(publicId);
