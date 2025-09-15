@@ -312,7 +312,7 @@ export const approveRegistration = async (req, res) => {
       name: registration.name,
       registrationId: registration.registrationId,
       courseName,
-      registrationURL: `${process.env.FRONTEND_URL}/registration-tracker/${registration.registrationId}}`,
+      registrationURL: `${process.env.FRONTEND_URL}/registration-tracker/${registration.registrationId}`,
     });
 
     res.json({ message: "Registration approved and email sent successfully" });
